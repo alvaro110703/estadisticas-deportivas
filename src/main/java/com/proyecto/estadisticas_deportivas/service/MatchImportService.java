@@ -23,20 +23,18 @@ public class MatchImportService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     private boolean checkIsBigMatch(String homeTeam, String awayTeam) {
-        // Lista ampliada con variantes de nombres para evitar errores de detección
         List<String> topTeams = Arrays.asList(
                 "Real Madrid", "FC Barcelona", "Barcelona", "Atletico Madrid", "Athletic Club",
                 "Manchester City", "Liverpool", "Arsenal", "Manchester United", "Chelsea", "Tottenham",
                 "Juventus", "Inter", "AC Milan", "Milan", "Napoli",
                 "Bayern Munich", "Bayern Muenchen", "Borussia Dortmund", "Bayer Leverkusen",
-                "Paris Saint Germain", "PSG", "Marseille", "Lyon",
-                "Ajax", "PSV Eindhoven", "Feyenoord"
+                "Paris Saint Germain", "PSG", "Marseille", "Lyon"
         );
         return topTeams.contains(homeTeam) || topTeams.contains(awayTeam);
     }
 
     public void importFullSeasonByDays(String leagueId) {
-        LocalDate startDate = LocalDate.of(2025, 8, 1); // Inicio de temporada
+        LocalDate startDate = LocalDate.of(2026, 5, 1);
         LocalDate endDate = LocalDate.now();
 
         System.out.println(">>> Iniciando importación masiva para la liga: " + leagueId);
@@ -65,7 +63,7 @@ public class MatchImportService {
                 if (e.getMessage().contains("429")) {
                     System.err.println("!!! Límite de API alcanzado. Esperando 1 minuto para reintentar...");
                     try { Thread.sleep(60000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
-                    continue; // Reintenta el mismo día tras la pausa
+                    continue; 
                 } else {
                     System.err.println("[ERROR] Día " + startDate + ": " + e.getMessage());
                 }
@@ -80,7 +78,6 @@ public class MatchImportService {
         String away = event.path("strAwayTeam").asText();
         LocalDate date = LocalDate.parse(event.path("dateEvent").asText());
 
-        // Verificamos si ya existe para no duplicar datos
         if (matchRepo.findByHomeTeamAndAwayTeamAndDate(home, away, date).isEmpty()) {
             String hScoreStr = event.path("intHomeScore").asText();
             String aScoreStr = event.path("intAwayScore").asText();
