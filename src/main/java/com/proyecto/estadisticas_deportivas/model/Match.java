@@ -19,16 +19,17 @@ public class Match {
     private LocalDate date;
 
     private boolean bigMatch;
-
+    private String apiMatchId;
     public Match() {}
 
-    public Match(String homeTeam, String awayTeam, int homeScore, int awayScore, LocalDate date, boolean bigMatch) {
+    public Match(String homeTeam, String awayTeam, int homeScore, int awayScore, LocalDate date, boolean bigMatch, String apiMatchId) {
         this.homeTeam = homeTeam;
         this.awayTeam = awayTeam;
         this.homeScore = homeScore;
         this.awayScore = awayScore;
         this.date = date;
         this.bigMatch = bigMatch;
+        this.apiMatchId = apiMatchId;
     }
 
     // Getters y Setters
@@ -52,4 +53,12 @@ public class Match {
 
     public boolean isBigMatch() { return bigMatch; }
     public void setBigMatch(boolean bigMatch) { this.bigMatch = bigMatch; }
+
+    public String getApiMatchId() {
+    return apiMatchId;
+}
+
+public void setApiMatchId(String apiMatchId) {
+    this.apiMatchId = apiMatchId;
+}
 }

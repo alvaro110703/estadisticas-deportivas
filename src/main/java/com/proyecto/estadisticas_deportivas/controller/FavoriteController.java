@@ -5,6 +5,7 @@ import com.proyecto.estadisticas_deportivas.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 import java.util.Set;
 
@@ -27,8 +28,11 @@ public class FavoriteController {
         return ResponseEntity.ok("Jugador eliminado de favoritos");
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<Set<Player>> getFavorites(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getFavorites(userId));
+    @GetMapping
+    public ResponseEntity<Set<Player>> getFavorites(Authentication authentication) {
+        // authentication.getName() nos da el CORREO (o username) con el que se logueó
+        // en Postman
+        String email = authentication.getName();
+        return ResponseEntity.ok(userService.getFavoritesByEmail(email));
     }
 }

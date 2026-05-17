@@ -19,4 +19,8 @@ public interface MatchRepo extends JpaRepository<Match, Long> {
     List<Match> findByAwayTeam(String teamName);
 
     List<Match> findByHomeTeam(String teamName);
+
+    Optional<Match> findByApiMatchId(String apiMatchId);
+
+    List<Match> findByDateBetween(LocalDate start, LocalDate end);
 }
