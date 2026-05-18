@@ -36,17 +36,17 @@ public class MatchImportService {
 
     private boolean checkIsBigMatch(String homeTeam, String awayTeam) {
         List<String> topTeams = Arrays.asList(
-                "Real Madrid", "FC Barcelona", "Barcelona", "Atlético Madrid", "Athletic Bilbao",
+                "Real Madrid", "Barcelona", "Atlético Madrid", "Athletic Bilbao",
                 "Manchester City", "Liverpool", "Arsenal", "Manchester United", "Chelsea", "Tottenham Hotspur",
-                "Juventus", "Inter Milan", "AC Milan", "Milan", "Napoli", "Roma",
-                "Bayern Munich", "Bayern Muenchen", "Borussia Dortmund", "Bayer Leverkusen",
-                "Paris Saint Germain", "PSG", "Marseille", "Lyon", "Paris SG");
+                "Juventus", "Inter Milan", "AC Milan", "Napoli", "Roma",
+                "Bayern Munich", "Borussia Dortmund", "Bayer Leverkusen",
+                "Marseille", "Lyon", "Paris SG");
         return topTeams.contains(homeTeam) || topTeams.contains(awayTeam);
     }
 
     public void importFullSeasonByDays(String leagueId) {
-        LocalDate startDate = LocalDate.of(2026, 4, 11);
-        LocalDate endDate = LocalDate.of(2026, 5, 16);
+        LocalDate startDate = LocalDate.of(2025, 8, 10);
+        LocalDate endDate = LocalDate.of(2025, 12, 10);
 
         System.out.println(">>> Iniciando importación masiva para la liga: " + leagueId);
 
@@ -84,6 +84,52 @@ public class MatchImportService {
                 }
             }
             startDate = startDate.plusDays(1);
+        }
+        System.out.println(">>> Proceso finalizado para la liga " + leagueId);
+    }
+
+    public void importarPartidosPorRangoDinamico(LocalDate startDate, LocalDate endDate, String leagueId) {
+        System.out.println(">>> Iniciando importación masiva para la liga: " + leagueId);
+
+        // Usamos una variable auxiliar para no perder la fecha de inicio original
+        LocalDate currentDate = startDate;
+
+        while (currentDate.isBefore(endDate)) {
+            String url = "https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=" + currentDate + "&l=" + leagueId;
+
+            try {
+                String response = restTemplate.getForObject(url, String.class);
+                JsonNode root = mapper.readTree(response);
+                JsonNode events = root.path("events");
+
+                if (events.isArray() && !events.isEmpty()) {
+                    for (JsonNode event : events) {
+                        processAndSaveMatch(event);
+                    }
+                    System.out
+                            .println("[OK] Datos guardados para el día: " + currentDate + " (Liga: " + leagueId + ")");
+                } else {
+                    System.out.println("[INFO] Sin partidos el día: " + currentDate + " (Liga: " + leagueId + ")");
+                }
+
+                // Pausa de seguridad para evitar el error 429 (Too Many Requests)
+                Thread.sleep(3000);
+
+            } catch (Exception e) {
+                if (e.getMessage() != null && e.getMessage().contains("429")) {
+                    System.err.println("!!! Límite de API alcanzado. Esperando 1 minuto para reintentar...");
+                    try {
+                        Thread.sleep(60000);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                    continue; // Reintenta el mismo día
+                } else {
+                    System.err.println("[ERROR] Día " + currentDate + " - Liga " + leagueId + ": " + e.getMessage());
+                }
+            }
+            // Avanzamos al siguiente día
+            currentDate = currentDate.plusDays(1);
         }
         System.out.println(">>> Proceso finalizado para la liga " + leagueId);
     }
@@ -165,8 +211,8 @@ public class MatchImportService {
     public void procesarEventosPorRangoFijo() {
         // 🎯 CONFIGURACIÓN MANUAL DE FECHAS: Modifica estas líneas según el mes que
         // vayas a procesar
-        LocalDate startDate = LocalDate.of(2026, 4, 11);
-        LocalDate endDate = LocalDate.of(2026, 5, 16);
+        LocalDate startDate = LocalDate.of(2025, 8, 10);
+        LocalDate endDate = LocalDate.of(2025, 12, 10);
 
         System.out.println(">>> Sincronizando eventos para partidos en el rango fijo: " + startDate + " a " + endDate);
 
@@ -426,7 +472,7 @@ public class MatchImportService {
             return "ATTACKER";
         }
 
-        if (pos.contains("midfield") || pos.contains("midfielder") || pos.contains("central midfield")) {
+        if (pos.contains("midfield") || pos.contains("midfielder") || pos.contains("central midfield") || pos.contains("defensive lineman")) {
             return "MIDFIELDER";
         }
 
@@ -519,5 +565,91 @@ public class MatchImportService {
             this.posicionOriginalApi = posicionOriginalApi;
             this.posicionMapeadaDb = posicionMapeadaDb;
         }
+    }
+
+    public void repararDiasDiezFaltantes() {
+        System.out.println(">>> 🛠️ INICIANDO PROCESO DE REPARACIÓN DE LOS DÍAS 10 PARA TODAS LAS LIGAS...");
+
+        // 1. Definimos las ligas que manejas en tu proyecto de forma dinámica
+        String[] ligasId = { "4335", "4328", "4332", "4331", "4334" }; // ¡Cambia estos IDs por los reales de tus ligas!
+
+        // 2. Definimos los meses que se quedaron con el "agujero" del día 10
+        int[] mesesAfectados = { 1, 2, 3, 4 }; // Enero, Febrero, Marzo, Abril
+        int anyo = 2026;
+
+        for (int mes : mesesAfectados) {
+            LocalDate diaDiez = LocalDate.of(anyo, mes, 10);
+            LocalDate diaSiguiente = diaDiez.plusDays(1);
+
+            System.out.println("\n=======================================================");
+            System.out.println("📅 FECHA CRÍTICA: " + diaDiez);
+            System.out.println("=======================================================");
+
+            // 🔥 BUCLE DINÁMICO: Recorremos cada una de las ligas del array para este día
+            for (String leagueId : ligasId) {
+                System.out.println("\n[REPARADOR] ⚽ Procesando Liga ID: " + leagueId + " para el día " + diaDiez);
+
+                // ==========================================
+                // PASO A: REPARAR LOS MATCH_ID EN LA TABLA MATCHES
+                // ==========================================
+                try {
+                    System.out.println("[REPARADOR] -> Lanzando importador dinámico para la liga " + leagueId);
+
+                    // Llamamos a tu método pasándole las fechas y el ID de la liga correspondiente
+                    importarPartidosPorRangoDinamico(diaDiez, diaSiguiente, leagueId);
+
+                } catch (Exception e) {
+                    System.err.println("[ERROR] No se pudieron actualizar los partidos de la liga " + leagueId
+                            + " el día " + diaDiez + ": " + e.getMessage());
+                }
+
+                // Pausa de cortesía para que la API respire tras bajarse el calendario de esta
+                // liga
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ignored) {
+                }
+            }
+
+            // ==========================================
+            // PASO B: INGESTAR EVENTOS DE LOS PARTIDOS REPARADOS
+            // ==========================================
+            // Una vez ejecutada la Fase 1 para todas las ligas de este día,
+            // buscamos en la BD local todos los partidos que caigan en este rango de 24
+            // horas.
+            System.out.println("\n[REPARADOR] -> Buscando partidos reparados en la BD para el día " + diaDiez + "...");
+            List<Match> partidosDelDia = matchRepo.findByDateBetween(diaDiez, diaSiguiente);
+
+            int eventosProcesados = 0;
+            for (Match partido : partidosDelDia) {
+                String apiMatchId = partido.getApiMatchId();
+
+                // Si el Paso A funcionó y guardó el ID, ahora entrará aquí
+                if (apiMatchId != null && !apiMatchId.isEmpty()) {
+
+                    // Comprobamos si ya tiene eventos para no duplicar ni gastar llamadas
+                    boolean yaTieneEventos = matchEventRepo.existsByMatchId(apiMatchId);
+
+                    if (!yaTieneEventos) {
+                        System.out.println("[TIMELINE] Bajando eventos de: "
+                                + partido.getHomeTeam() + " vs " + partido.getAwayTeam() + " (ID: " + apiMatchId + ")");
+
+                        // 🔽 Pon aquí el método real de tu Fase 2 para importar los eventos
+                        importTimelineEvents(apiMatchId);
+                        eventosProcesados++;
+
+                        // ⏱️ PAUSA ANTIBANEO: Crucial para evitar el error 429
+                        try {
+                            Thread.sleep(4000);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                }
+            }
+            System.out.println("[REPARADOR] ✅ Todo listo para el día " + diaDiez + ". Eventos nuevos inyectados: "
+                    + eventosProcesados);
+        }
+        System.out.println("\n>>> 🛠️ PROCESO DE REPARACIÓN TERMINADO. ¡Todas las ligas y fechas reparadas!");
     }
 }

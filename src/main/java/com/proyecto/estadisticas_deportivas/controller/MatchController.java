@@ -70,4 +70,14 @@ public class MatchController {
         // real
         return ResponseEntity.ok(matchImportService.getDebugList());
     }
+
+    @GetMapping("/reparar-dias-diez")
+    public ResponseEntity<String> repararDiasDiez() {
+        System.out.println(">>> Disparando el parcheador de seguridad para los días 10...");
+
+        // Ejecuta el script que acabamos de crear
+        matchImportService.repararDiasDiezFaltantes();
+
+        return ResponseEntity.ok("Proceso de reparación finalizado con éxito. Revisa la consola del IDE.");
+    }
 }
