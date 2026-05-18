@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MatchEventRepository extends JpaRepository<MatchEvent, Long> {
+public interface MatchEventRepo extends JpaRepository<MatchEvent, Long> {
     // De momento con los métodos heredados de JpaRepository (como .save()) nos basta
     boolean existsByMatchId(String matchId);
 }

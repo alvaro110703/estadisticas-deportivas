@@ -5,7 +5,7 @@ import com.proyecto.estadisticas_deportivas.model.MatchEvent;
 import com.proyecto.estadisticas_deportivas.model.Player;
 import com.proyecto.estadisticas_deportivas.repository.MatchRepo;
 import com.proyecto.estadisticas_deportivas.repository.PlayerRepo;
-import com.proyecto.estadisticas_deportivas.repository.MatchEventRepository; // Tu nuevo repositorio
+import com.proyecto.estadisticas_deportivas.repository.MatchEventRepo; // Tu nuevo repositorio
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -29,7 +29,7 @@ public class MatchImportService {
     private MatchRepo matchRepo;
 
     @Autowired
-    private MatchEventRepository matchEventRepo; // Inyectamos el nuevo repositorio de eventos
+    private MatchEventRepo matchEventRepo; // Inyectamos el nuevo repositorio de eventos
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
