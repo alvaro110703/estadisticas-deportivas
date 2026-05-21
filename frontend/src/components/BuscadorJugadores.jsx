@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import './css/BuscadorJugadores.css';
 
-function BuscadorJugadores({ usuario }) {
+function BuscadorJugadores({ usuario, onVolverAlInicio }) {
     const [jugadores, setJugadores] = useState([]);
     const [busqueda, setBusqueda] = useState('');
     const [cargando, setCargando] = useState(true);
 
-    // Estado clave para saber qué jugador se ha clicado
     const [jugadorSeleccionado, setJugadorSeleccionado] = useState(null);
     const [ultimosPartidos, setUltimosPartidos] = useState([]);
-
+    const [cargandoPartidos, setCargandoPartidos] = useState([]);
     const esInvitado = usuario?.rol === 'GUEST';
 
     useEffect(() => {
@@ -27,18 +26,15 @@ function BuscadorJugadores({ usuario }) {
         obtenerJugadores();
     }, []);
 
-    // Al hacer clic en un jugador, cargamos sus detalles y sus partidos
     const handleSeleccionarJugador = async (jugador) => {
         setJugadorSeleccionado(jugador);
         setCargandoPartidos(true);
 
         try {
-            // LLAMADA REAL: Conecta con el @GetMapping("/recent") de tu MatchController
             const response = await api.get(`/matches/recent?team=${encodeURIComponent(jugador.team)}`);
-            setUltimosPartidos(response.data); // Guarda la lista de objetos { texto: "..." }
+            setUltimosPartidos(response.data); 
         } catch (error) {
             console.error("Error al consultar partidos en tiempo real. Usando respaldo:", error);
-            // Tu plan de rescate visual si el backend falla
             setUltimosPartidos([
                 { id: 1, texto: "Sin partidos recientes (Offline)" }
             ]);
@@ -46,13 +42,12 @@ function BuscadorJugadores({ usuario }) {
             setCargandoPartidos(false);
         }
     };
-    // Coincidencia de caracteres dinámica (Filtra de inmediato a cada letra introducida)
+
     const jugadoresFiltrados = jugadores.filter(jugador =>
         jugador.name.toLowerCase().includes(busqueda.toLowerCase()) ||
         jugador.team.toLowerCase().includes(busqueda.toLowerCase())
     );
 
-    // Mapeo amigable de la posición para cumplir con tu nota de diseño
     const mapearPosicion = (pos) => {
         if (pos === 'ATTACKER') return 'Delantero';
         if (pos === 'MIDFIELDER') return 'Centrocampista';
@@ -61,16 +56,15 @@ function BuscadorJugadores({ usuario }) {
         return pos;
     };
 
-    // Si hay un jugador seleccionado, mostramos la ficha técnica (Fiel a tu imagen)
+    // ================= VISTA DE DETALLES DEL JUGADOR =================
     if (jugadorSeleccionado) {
         return (
             <div className="buscador-container perfil-jugador-box">
                 <div className="perfil-header">
                     <div className="perfil-identificacion">
-                        <div className="avatar-jugador-xl">🏃‍♂️</div>
                         <div>
                             <h2>{jugadorSeleccionado.name}</h2>
-                            <p style={{ color: '#64748b', margin: 0 }}>{jugadorSeleccionado.team}</p>
+                            <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>{jugadorSeleccionado.team}</p>
                         </div>
                     </div>
 
@@ -82,57 +76,102 @@ function BuscadorJugadores({ usuario }) {
                 </div>
 
                 <div className="grid-info-datos">
-                    {/* Bloque Izquierdo: Información Básica y Estadísticas Generales */}
                     <div className="bloque-datos">
                         <h4>Información básica y estadísticas</h4>
-                        <ul>
-                            <li>🏢 <strong>Club:</strong> {jugadorSeleccionado.team}</li>
-                            <li>🎯 <strong>Posición:</strong> {mapearPosicion(jugadorSeleccionado.position)}</li>
-                            <li>⚽ <strong>Goles totales:</strong> {jugadorSeleccionado.totalGoals}</li>
-                            <li>👟 <strong>Asistencias totales:</strong> {jugadorSeleccionado.totalAssists}</li>
-                            <li>🏃‍♂️ <strong>Partidos jugados:</strong> {jugadorSeleccionado.partidosJugados || 18}</li>
-                            <li>🛡️ <strong>Partidos como titular:</strong> {jugadorSeleccionado.partidosTitular || 15}</li>
+                        <ul className="lista-info-basica">
+                            <li><strong>Club:</strong> {jugadorSeleccionado.team}</li>
+                            <li><strong>Posición:</strong> {mapearPosicion(jugadorSeleccionado.position)}</li>
+                            <li><strong>Goles totales:</strong> {jugadorSeleccionado.totalGoals}</li>
+                            <li><strong>Asistencias totales:</strong> {jugadorSeleccionado.totalAssists}</li>
+                            <li><strong>Partidos jugados:</strong> {jugadorSeleccionado.partidosJugados || 18}</li>
+                            <li><strong>Partidos como titular:</strong> {jugadorSeleccionado.partidosTitular || 15}</li>
                         </ul>
                     </div>
 
-                    {/* Bloque Derecho: Historial Reciente (Tu PowerPoint) */}
                     <div className="bloque-datos">
                         <h4>Últimos 5 partidos de su club</h4>
-                        <div>
-                            {ultimosPartidos.map((partido, index) => (
-                                <div key={partido.id || index} className="partido-item">
-                                    P{index + 1}: {partido.texto}
-                                </div>
-                            ))}
+                        <div className="partidos-recientes-lista">
+                            {ultimosPartidos.map((partido, index) => {
+                                const partidoTexto = partido.texto || "";
+                                const match = partidoTexto.match(/^(.+?)\s+(\d+)\s*-\s*(\d+)\s+(.+)$/);
+
+                                let letra = 'E';
+                                let claseColor = 'resultado-e';
+
+                                if (match) {
+                                    const equipoLocal = match[1].trim();
+                                    const golesLocal = parseInt(match[2], 10);
+                                    const golesVisitante = parseInt(match[3], 10);
+                                    const clubDelJugador = jugadorSeleccionado?.team || "Rayo Vallecano";
+
+                                    if (golesLocal === golesVisitante) {
+                                        letra = 'E';
+                                        claseColor = 'resultado-e';
+                                    } else {
+                                        const esLocal = equipoLocal.toLowerCase().includes(clubDelJugador.toLowerCase());
+                                        if (esLocal) {
+                                            letra = golesLocal > golesVisitante ? 'V' : 'D';
+                                            claseColor = golesLocal > golesVisitante ? 'resultado-v' : 'resultado-d';
+                                        } else {
+                                            letra = golesVisitante > golesLocal ? 'V' : 'D';
+                                            claseColor = golesVisitante > golesLocal ? 'resultado-v' : 'resultado-d';
+                                        }
+                                    }
+                                }
+
+                                return (
+                                    <div key={partido.id || index} className="partido-item">
+                                        <span className="partido-texto">{partidoTexto}</span>
+                                        <div className={`badge-resultado ${claseColor}`}>
+                                            {letra}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
 
-                <button onClick={() => setJugadorSeleccionado(null)} className="btn-volver">
-                    ← Volver al buscador
-                </button>
+                {/* BOTONERA INFERIOR EN EL PERFIL: VOLVER ATRÁS Y HOME */}
+                <div className="botonera-navegacion-inferior">
+                    <button 
+                        onClick={() => setJugadorSeleccionado(null)} 
+                        className="btn-nav-icono" 
+                        title="Volver al buscador"
+                    >
+                        ↩️
+                    </button>
+                    <button 
+                        onClick={onVolverAlInicio} 
+                        className="btn-nav-icono" 
+                        title="Volver al menú de inicio"
+                    >
+                        🏠
+                    </button>
+                </div>
             </div>
         );
     }
 
-    // Vista principal: Buscador + Tabla
+    // ================= VISTA PRINCIPAL (TABLA / BUSCADOR) =================
     return (
         <div className="buscador-container">
-            <h2>🔍 Buscador Avanzado de Jugadores</h2>
-            <p>Introduce las iniciales para filtrar en tiempo real y haz clic en cualquier fila para ver el análisis extendido.</p>
-
             <div className="search-bar-container">
                 <input
                     type="text"
-                    placeholder="Escribe para buscar (ej. Vin)..."
                     className="search-input"
+                    placeholder="Buscar por jugador o club..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                 />
             </div>
 
             {cargando ? (
-                <p>Procesando base de datos deportiva...</p>
+                <p className="estado-mensaje">Procesando base de datos deportiva...</p>
+            ) : busqueda.trim() === '' ? (
+                <div className="teclea-prompt">
+                    <p>💡 Teclea para mostrar coincidencias...</p>
+                </div>
             ) : (
                 <table className="tabla-jugadores">
                     <thead>
@@ -140,8 +179,8 @@ function BuscadorJugadores({ usuario }) {
                             <th>Nombre</th>
                             <th>Posición</th>
                             <th>Club</th>
-                            <th>Goles ⚽</th>
-                            <th>Asistencias 👟</th>
+                            <th>Goles</th>
+                            <th>Asistencias</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -169,6 +208,17 @@ function BuscadorJugadores({ usuario }) {
                     </tbody>
                 </table>
             )}
+
+            {/* BOTONERA INFERIOR EN EL BUSCADOR: SÓLO CASITA PARA IR AL MENÚ */}
+            <div className="botonera-navegacion-inferior">
+                <button 
+                    onClick={onVolverAlInicio} 
+                    className="btn-nav-icono" 
+                    title="Volver al menú de inicio"
+                >
+                    🏠
+                </button>
+            </div>
         </div>
     );
 }

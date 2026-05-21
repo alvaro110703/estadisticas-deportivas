@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/players")
-@CrossOrigin(origins = "*") // Esto evitará problemas cuando conectes el Frontend
+@CrossOrigin(origins = "http://localhost:5173")
 public class PlayerController {
 
     @Autowired

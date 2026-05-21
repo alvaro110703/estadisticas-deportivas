@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import api from '../services/api';
-import './css/AuthForm.css'; 
+import './css/AuthForm.css';
 
 function Login({ onBack, onLoginSuccess }) {
-    const [credentials, setCredentials] = useState({ correo: '', contrasena: '' });
+    // 1. Modificamos el estado inicial para usar 'identificador' en lugar de 'correo'
+    const [credentials, setCredentials] = useState({ identificador: '', contrasena: '' });
     const [error, setError] = useState(null);
     const [cargando, setCargando] = useState(false);
 
@@ -18,10 +19,13 @@ function Login({ onBack, onLoginSuccess }) {
         setCargando(true);
 
         try {
+            // Envía el objeto con { identificador, contrasena } tal y como espera el DTO
             const response = await api.post('/users/login', credentials);
+
+            // Si el login es exitoso, mapeamos la respuesta real que devuelve tu backend
             onLoginSuccess({
-                nombre: response.data.nombre || credentials.correo,
-                correo: credentials.correo,
+                nombre: response.data.nombre,
+                correo: response.data.correo,
                 rol: response.data.rol || 'USER'
             });
         } catch (err) {
@@ -40,13 +44,30 @@ function Login({ onBack, onLoginSuccess }) {
                 {error && <div className="auth-error-box">❌ {error}</div>}
 
                 <form onSubmit={handleSubmit} className="auth-form">
+                    {/* 2. Cambiamos el input para permitir texto libre (Nombre o Correo) */}
                     <div className="auth-input-group">
-                        <label className="auth-label">Correo Electrónico</label>
-                        <input type="email" name="correo" value={credentials.correo} onChange={handleChange} className="auth-input" required disabled={cargando} />
+                        <label className="auth-label">Usuario o Correo Electrónico</label>
+                        <input
+                            type="text" 
+                            name="identificador" 
+                            value={credentials.identificador}
+                            onChange={handleChange}
+                            className="auth-input"
+                            required
+                            disabled={cargando}
+                        />
                     </div>
                     <div className="auth-input-group">
                         <label className="auth-label">Contraseña</label>
-                        <input type="password" name="contrasena" value={credentials.contrasena} onChange={handleChange} className="auth-input" required disabled={cargando} />
+                        <input
+                            type="password"
+                            name="contrasena"
+                            value={credentials.contrasena}
+                            onChange={handleChange}
+                            className="auth-input"
+                            required
+                            disabled={cargando}
+                        />
                     </div>
                     <button type="submit" className="auth-btn-submit btn-login-color" disabled={cargando}>
                         {cargando ? 'Accediendo...' : 'Ingresar'}

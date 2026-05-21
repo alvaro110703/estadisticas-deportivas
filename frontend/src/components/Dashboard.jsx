@@ -8,12 +8,6 @@ function Dashboard({ usuario, onLogout }) {
 
     const esInvitado = usuario?.rol === 'GUEST';
 
-    // Simulación temporal de favoritos
-    const favoritosPreview = [
-        { id: 1, name: 'Vinícius Júnior', imagen: 'https://via.placeholder.com/30' },
-        { id: 2, name: 'Jude Bellingham', imagen: 'https://via.placeholder.com/30' }
-    ];
-
     return (
         <div className="dashboard-container">
 
@@ -94,8 +88,10 @@ function Dashboard({ usuario, onLogout }) {
                     {seccion === 'BUSCADOR_JUG' && (
                         <div>
                             <h2>🔍 Buscador de Jugadores</h2>
-                            <button onClick={() => setSeccion('INICIO')} className="btn-volver">← Volver al inicio</button>
-                            <BuscadorJugadores usuario={usuario} />
+                            <BuscadorJugadores
+                                usuario={usuario}
+                                onVolverAlInicio={() => setSeccion('INICIO')}
+                            />
                         </div>
                     )}
 
@@ -114,7 +110,7 @@ function Dashboard({ usuario, onLogout }) {
                                 <div className="avatar-circle" style={{ width: '100px', height: '100px', fontSize: '32px' }}>
                                     {usuario?.nombre?.charAt(0).toUpperCase()}
                                 </div>
-                                <button className="btn-upload">Subir nueva foto de perfil 📸</button>
+                                <button className="btn-upload">Añadir nueva foto de perfil</button>
                             </div>
                             <button onClick={() => setSeccion('INICIO')} className="btn-volver">← Volver al inicio</button>
                         </div>
@@ -135,16 +131,11 @@ function Dashboard({ usuario, onLogout }) {
                     {esInvitado ? (
                         <div className="fav-candado-box">
                             <span style={{ fontSize: '24px' }}>🔒</span>
-                            <p style={{ fontSize: '13px', margin: '5px 0 0 0' }}>Inicia sesión para guardar tus jugadores favoritos.</p>
+                            <p style={{ fontSize: '13px', margin: '5px 0 0 0' }}>Bloqueado</p>
                         </div>
                     ) : (
                         <div className="fav-list">
-                            {favoritosPreview.map(jug => (
-                                <div key={jug.id} className="fav-item">
-                                    <img src={jug.imagen} alt={jug.name} className="fav-img" />
-                                    <span>{jug.name}</span>
-                                </div>
-                            ))}
+
                             <span onClick={() => setSeccion('FAVORITOS_ALL')} className="ver-mas-link">Ver más...</span>
                         </div>
                     )}

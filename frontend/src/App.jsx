@@ -19,8 +19,7 @@ function App() {
       {/* 1. PANTALLA DE BIENVENIDA */}
       {vista === 'MENU' && (
         <div className="menu-welcome">
-          <h1 className="menu-title">🏆 Sistema de Estadísticas Deportivas</h1>
-          <p className="menu-subtitle">Bienvenido. Por favor, selecciona una opción para continuar:</p>
+          <h1 className="menu-title">Sistema de Estadísticas Deportivas</h1>
 
           <div className="menu-button-group">
             <button onClick={() => setVista('LOGIN')} className="btn-menu btn-menu-primary">

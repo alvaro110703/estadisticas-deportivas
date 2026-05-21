@@ -12,8 +12,10 @@
 }
 
 .menu-title {
-    color: #1e293b;
-    margin-bottom: 10px;
+    font-size: 2.5rem; /* El tamaño que ya tenga */
+  color: #1e293b;
+  margin-bottom: 40px; /* 👈 Esto empujará los botones hacia abajo dándoles aire */
+  text-align: center;
 }
 
 .menu-subtitle {
