@@ -1,5 +1,7 @@
 package com.proyecto.estadisticas_deportivas.controller;
 
+import com.proyecto.estadisticas_deportivas.model.Match;
+import com.proyecto.estadisticas_deportivas.repository.MatchRepo;
 import com.proyecto.estadisticas_deportivas.service.MatchImportService;
 
 import java.util.List;
@@ -17,6 +19,9 @@ public class MatchController {
 
     @Autowired
     private MatchImportService matchImportService;
+
+    @Autowired
+    private MatchRepo matchRepo;
 
     @GetMapping("/import-full/{leagueId}")
     public String importFullSeason(@PathVariable String leagueId) {
@@ -79,5 +84,38 @@ public class MatchController {
         matchImportService.repararDiasDiezFaltantes();
 
         return ResponseEntity.ok("Proceso de reparación finalizado con éxito. Revisa la consola del IDE.");
+    }
+
+    @GetMapping("/recent")
+    public ResponseEntity<List<java.util.Map<String, String>>> getRecentMatches(
+            @org.springframework.web.bind.annotation.RequestParam String team) {
+        // Buscamos todos los partidos de ese club (local o visitante)
+        List<Match> todosLosPartidos = matchRepo.findByHomeTeamOrAwayTeam(team, team);
+
+        // Los ordenamos por fecha de más reciente a más antiguo
+        todosLosPartidos.sort((m1, m2) -> m2.getDate().compareTo(m1.getDate()));
+
+        // Nos quedamos con un máximo de 5 partidos
+        List<Match> ultimos5 = todosLosPartidos.stream().limit(5).collect(java.util.stream.Collectors.toList());
+
+        // Mapeamos los partidos al formato de texto simplificado que espera tu Frontend
+        // ("RM 3 - 1 SEV")
+        List<java.util.Map<String, String>> respuestaFront = new java.util.ArrayList<>();
+
+        for (Match m : ultimos5) {
+            java.util.Map<String, String> datosPartido = new java.util.HashMap<>();
+
+            // Suponiendo que tus atributos en la entidad Match se llaman getHomeTeam(),
+            // getAwayTeam()
+            // y que tienes los goles guardados como getHomeScore() y getAwayScore() (o
+            // similar)
+            String textoPartido = m.getHomeTeam() + " " + m.getHomeScore() + " - " + m.getAwayScore() + " "
+                    + m.getAwayTeam();
+
+            datosPartido.put("texto", textoPartido);
+            respuestaFront.add(datosPartido);
+        }
+
+        return ResponseEntity.ok(respuestaFront);
     }
 }

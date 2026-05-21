@@ -1,0 +1,125 @@
+/* src/components/AuthForm.css */
+
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 50px;
+    font-family: sans-serif;
+}
+
+.auth-card {
+    background: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-title {
+    margin: 0 0 10px 0;
+    text-align: center;
+    color: #333;
+}
+
+.auth-subtitle {
+    margin: 0 0 25px 0;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.auth-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.auth-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #444;
+}
+
+.auth-input {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.auth-input:focus {
+    border-color: #3b82f6;
+}
+
+/* Variaciones de botones mediante clases específicas */
+.auth-btn-submit {
+    padding: 12px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn-login-color {
+    background-color: #007bff;
+}
+
+.btn-login-color:hover {
+    background-color: #0056b3;
+}
+
+.btn-register-color {
+    background-color: #28a745;
+}
+
+.btn-register-color:hover {
+    background-color: #218838;
+}
+
+.auth-btn-back {
+    margin-top: 15px;
+    width: 100%;
+    padding: 10px;
+    background-color: transparent;
+    color: #6c757d;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.auth-btn-back:hover {
+    color: #333;
+    text-decoration: underline;
+}
+
+/* Cajas de errores y éxitos */
+.auth-error-box {
+    padding: 10px;
+    background-color: #fce8e6;
+    color: #a8071a;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.auth-success-box {
+    padding: 10px;
+    background-color: #f6ffed;
+    color: #389e0d;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}

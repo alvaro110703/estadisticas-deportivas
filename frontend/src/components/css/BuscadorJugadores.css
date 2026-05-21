@@ -1,0 +1,76 @@
+/* src/components/css/BuscadorJugadores.css */
+
+.buscador-container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.search-bar-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.search-input {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: #3b82f6;
+}
+
+/* Estilos de la Tabla */
+.tabla-jugadores {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 15px;
+}
+
+.tabla-jugadores th {
+    background-color: #f8fafc;
+    color: #64748b;
+    text-align: left;
+    padding: 14px 16px;
+    border-bottom: 2px solid #e2e8f0;
+    font-weight: 600;
+}
+
+.tabla-jugadores td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.tabla-jugadores tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Botones de acción dentro de la tabla */
+.btn-favorito {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    transition: transform 0.1s;
+}
+
+.btn-favorito:hover {
+    transform: scale(1.2);
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+    font-style: italic;
+}
