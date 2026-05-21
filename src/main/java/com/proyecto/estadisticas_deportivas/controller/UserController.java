@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -40,32 +41,28 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequest) {
         try {
-            // 1. Buscamos al usuario por correo usando el repositorio (o un método del
-            // service)
-            User usuario = userRepo.findByCorreo(loginRequest.getCorreo())
+            // Buscamos al usuario tanto por el nombre como por el correo usando el mismo
+            // valor
+            User usuario = userRepo
+                    .findByNombreOrCorreo(loginRequest.getIdentificador(), loginRequest.getIdentificador())
                     .orElseThrow(() -> new RuntimeException("Usuario o contraseña incorrectos."));
 
-            // 2. Comparamos la contraseña en texto plano del front con la encriptada de la
-            // DB
+            // Comparamos la contraseña encriptada
             if (!passwordEncoder.matches(loginRequest.getContrasena(), usuario.getContrasena())) {
                 throw new RuntimeException("Usuario o contraseña incorrectos.");
             }
 
-            // 3. Si todo está bien, le devolvemos al frontend los datos básicos que
-            // necesita pintar
-            // Devolvemos un mapa o un objeto limpio (¡NUNCA devuelvas la contraseña al
-            // front!)
+            // Estructuramos la respuesta para React
             Map<String, String> response = new HashMap<>();
+            response.put("id", String.valueOf(usuario.getId()));
             response.put("nombre", usuario.getNombre());
             response.put("correo", usuario.getCorreo());
             response.put("rol", usuario.getRol());
-            response.put("id", String.valueOf(usuario.getId()));
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            // Si falla, mandamos el mensaje de error que React pintará en la caja roja
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
 }
