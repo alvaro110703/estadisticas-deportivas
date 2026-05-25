@@ -311,3 +311,16 @@
     margin-top: 10px;
     display: inline-block;
 }
+
+.main-content h2 {
+    color: #0f172a;               /* Color pizarra casi negro (máxima visibilidad) */
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;      /* Centra horizontalmente el título */
+    align-items: center;          /* Alinea verticalmente el emoji con el texto */
+    gap: 12px;                    /* Separa el escudo del texto */
+    margin-bottom: 25px;
+    text-align: center;
+    width: 100%;
+}

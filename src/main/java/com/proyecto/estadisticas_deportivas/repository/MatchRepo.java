@@ -23,4 +23,6 @@ public interface MatchRepo extends JpaRepository<Match, Long> {
     Optional<Match> findByApiMatchId(String apiMatchId);
 
     List<Match> findByDateBetween(LocalDate start, LocalDate end);
+
+    List<Match> findAll();
 }

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import './css/BuscadorJugadores.css';
 
-function BuscadorJugadores({ usuario, onVolverAlInicio }) {
+function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdateFavoritos }) {
+    console.log("Datos del usuario en el Buscador:", usuario);
     const [jugadores, setJugadores] = useState([]);
     const [busqueda, setBusqueda] = useState('');
     const [cargando, setCargando] = useState(true);
@@ -32,7 +33,7 @@ function BuscadorJugadores({ usuario, onVolverAlInicio }) {
 
         try {
             const response = await api.get(`/matches/recent?team=${encodeURIComponent(jugador.team)}`);
-            setUltimosPartidos(response.data); 
+            setUltimosPartidos(response.data);
         } catch (error) {
             console.error("Error al consultar partidos en tiempo real. Usando respaldo:", error);
             setUltimosPartidos([
@@ -56,6 +57,65 @@ function BuscadorJugadores({ usuario, onVolverAlInicio }) {
         return pos;
     };
 
+    const añadirAFavoritos = async () => {
+        if (!usuario || !usuario.correo) {
+            alert("Error: No se ha detectado el correo del usuario");
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/favorites/add-by-email/${usuario.correo}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json', // Mandamos solo el tipo de contenido
+                },
+                body: JSON.stringify({
+                    // 🌟 Forzamos que sea un número entero para que Java no proteste
+                    id: Number(jugadorSeleccionado.id || jugadorSeleccionado.apiMatchId),
+                    name: jugadorSeleccionado.name,
+                    team: jugadorSeleccionado.team,
+                    position: jugadorSeleccionado.position
+                })
+            });
+
+            if (response.ok) {
+                alert('¡Jugador añadido a favoritos correctamente!');
+                if (onUpdateFavoritos) onUpdateFavoritos();
+            } else {
+                const errorText = await response.text();
+                alert(`No se pudo añadir: ${errorText}`);
+            }
+        } catch (error) {
+            console.error("Error al conectar con el servidor:", error);
+        }
+    };
+
+    const quitarDeFavoritos = async () => {
+        if (!usuario || !usuario.correo) return;
+
+        try {
+            // Apuntamos al endpoint de borrar (lo crearemos en el backend usando el correo)
+            const response = await fetch(`http://localhost:8080/api/favorites/remove-by-email/${usuario.correo}/${jugadorSeleccionado.id || jugadorSeleccionado.apiMatchId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.ok) {
+                alert('¡Jugador eliminado de favoritos correctamente!');
+                if (onUpdateFavoritos) {
+                    onUpdateFavoritos(); // Refresca la barra lateral
+                }
+            } else {
+                const errorText = await response.text();
+                alert(`No se pudo eliminar: ${errorText}`);
+            }
+        } catch (error) {
+            console.error("Error al conectar con el servidor:", error);
+        }
+    };
+
     // ================= VISTA DE DETALLES DEL JUGADOR =================
     if (jugadorSeleccionado) {
         return (
@@ -69,9 +129,23 @@ function BuscadorJugadores({ usuario, onVolverAlInicio }) {
                     </div>
 
                     {!esInvitado && (
-                        <button className="btn-fav-perfil" onClick={() => alert('Añadido a favoritos')}>
-                            ⭐ Añadir a Favoritos
-                        </button>
+                        /* 🌟 El botón comprueba si el jugador ya está en tu lista de favoritos 🌟 */
+                        favoritos.some(f => String(f.id) === String(jugadorSeleccionado.id || jugadorSeleccionado.apiMatchId)) ? (
+                            <button
+                                className="btn-fav-perfil"
+                                onClick={quitarDeFavoritos}
+                                style={{ backgroundColor: '#ef4444', color: 'white' }} // Opcional: Le da un fondo rojo de "quitar/peligro"
+                            >
+                                ❌ Quitar de Favoritos
+                            </button>
+                        ) : (
+                            <button
+                                className="btn-fav-perfil"
+                                onClick={añadirAFavoritos}
+                            >
+                                ⭐ Añadir a Favoritos
+                            </button>
+                        )
                     )}
                 </div>
 
@@ -134,16 +208,16 @@ function BuscadorJugadores({ usuario, onVolverAlInicio }) {
 
                 {/* BOTONERA INFERIOR EN EL PERFIL: VOLVER ATRÁS Y HOME */}
                 <div className="botonera-navegacion-inferior">
-                    <button 
-                        onClick={() => setJugadorSeleccionado(null)} 
-                        className="btn-nav-icono" 
+                    <button
+                        onClick={() => setJugadorSeleccionado(null)}
+                        className="btn-nav-icono"
                         title="Volver al buscador"
                     >
                         ↩️
                     </button>
-                    <button 
-                        onClick={onVolverAlInicio} 
-                        className="btn-nav-icono" 
+                    <button
+                        onClick={onVolverAlInicio}
+                        className="btn-nav-icono"
                         title="Volver al menú de inicio"
                     >
                         🏠
@@ -211,9 +285,9 @@ function BuscadorJugadores({ usuario, onVolverAlInicio }) {
 
             {/* BOTONERA INFERIOR EN EL BUSCADOR: SÓLO CASITA PARA IR AL MENÚ */}
             <div className="botonera-navegacion-inferior">
-                <button 
-                    onClick={onVolverAlInicio} 
-                    className="btn-nav-icono" 
+                <button
+                    onClick={onVolverAlInicio}
+                    className="btn-nav-icono"
                     title="Volver al menú de inicio"
                 >
                     🏠

@@ -77,16 +77,22 @@ public class UserService implements UserDetailsService {
         return user.getFavoritePlayers();
     }
 
+    public Set<Player> getFavoritesByUserId(Long userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+        return user.getFavoritePlayers();
+    }
+
     @Override
     public UserDetails loadUserByUsername(String correo) throws UsernameNotFoundException {
         User user = userRepo.findByCorreo(correo)
-            .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + correo));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + correo));
 
         // Mapeamos tu usuario de la DB al formato que entiende Spring Security
         return new org.springframework.security.core.userdetails.User(
-            user.getCorreo(),
-            user.getContrasena(), // Aquí va la clave que ya guardaste encriptada en el POST
-            Collections.emptyList() // Sin roles por ahora para no complicarlo
+                user.getCorreo(),
+                user.getContrasena(), // Aquí va la clave que ya guardaste encriptada en el POST
+                Collections.emptyList() // Sin roles por ahora para no complicarlo
         );
     }
 }

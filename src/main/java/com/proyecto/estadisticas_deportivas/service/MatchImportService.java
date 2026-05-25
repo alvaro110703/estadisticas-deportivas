@@ -45,8 +45,8 @@ public class MatchImportService {
     }
 
     public void importFullSeasonByDays(String leagueId) {
-        LocalDate startDate = LocalDate.of(2025, 8, 10);
-        LocalDate endDate = LocalDate.of(2025, 12, 10);
+        LocalDate startDate = LocalDate.of(2026, 5, 17);
+        LocalDate endDate = LocalDate.of(2026, 5, 24);
 
         System.out.println(">>> Iniciando importación masiva para la liga: " + leagueId);
 
@@ -211,8 +211,8 @@ public class MatchImportService {
     public void procesarEventosPorRangoFijo() {
         // 🎯 CONFIGURACIÓN MANUAL DE FECHAS: Modifica estas líneas según el mes que
         // vayas a procesar
-        LocalDate startDate = LocalDate.of(2025, 8, 10);
-        LocalDate endDate = LocalDate.of(2025, 12, 10);
+        LocalDate startDate = LocalDate.of(2026, 5, 17);
+        LocalDate endDate = LocalDate.of(2026, 5, 24);
 
         System.out.println(">>> Sincronizando eventos para partidos en el rango fijo: " + startDate + " a " + endDate);
 
