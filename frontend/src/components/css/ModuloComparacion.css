@@ -1,0 +1,212 @@
+.modulo-comparacion-container {
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Fila superior elástica para las 4 cruces */
+.fila-slots-comparacion {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    width: 100%;
+}
+
+.slot-card {
+    flex: 1;
+    min-height: 200px;
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.slot-card:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.slot-ocupado {
+    background: white;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.crear-slot-prompt {
+    text-align: center;
+}
+
+.cruz-roja-add {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.info-jugador-slot {
+    text-align: center;
+    padding: 15px;
+    width: 100%;
+}
+
+.avatar-slot {
+    width: 50px;
+    height: 50px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 20px;
+    margin: 0 auto 10px auto;
+}
+
+.btn-eliminar-slot {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.badge-posicion-slot {
+    display: inline-block;
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #475569;
+}
+
+/* Sub Buscador Intermedio */
+.sub-buscador-modal-box {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.search-input-sub {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.tabla-resultados-sub-wrapper {
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.tabla-jugadores-sub {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla-jugadores-sub th, .tabla-jugadores-sub td {
+    padding: 10px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.btn-add-to-comp {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-cerrar-sub-buscador {
+    background: #64748b;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Área de selectores y controles */
+.control-filtro-comparar-box {
+    background: #f1f5f9;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.select-filtro-contextual {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 14px;
+}
+
+.btn-ejecutar-comparacion {
+    background: #3b82f6;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.btn-ejecutar-comparacion:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+    color: #94a3b8;
+}
+
+/* Tabla Comparativa de Resultados Finales */
+.bloque-resultados-analisis-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.tabla-resultados-final-comparativa {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.tabla-resultados-final-comparativa th, .tabla-resultados-final-comparativa td {
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.tabla-resultados-final-comparativa th {
+    background: #f8fafc;
+    color: #475569;
+}
+
+.res-resaltado-goles {
+    color: #2563eb;
+    font-weight: bold;
+}
+
+.res-resaltado-victorias {
+    color: #16a34a;
+    font-weight: bold;
+}

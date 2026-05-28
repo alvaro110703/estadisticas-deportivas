@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './css/Dashboard.css';
 import BuscadorJugadores from './BuscadorJugadores';
 import BuscadorClubes from './BuscadorClubes';
+import ModuloComparacion from './ModuloComparacion';
 
 function Dashboard({ usuario, onLogout }) {
     const [seccion, setSeccion] = useState('INICIO');
@@ -14,19 +15,19 @@ function Dashboard({ usuario, onLogout }) {
 
     // 🌟 FUNCIÓN PARA COGER LOS FAVORITOS DESDE EL BACKEND 🌟
     const cargarFavoritos = async () => {
-    if (esInvitado || !usuario || !usuario.correo) return;
-    
-    try {
-        const response = await fetch(`http://localhost:8080/api/favorites/user-email/${usuario.correo}`);
-        
-        if (response.ok) {
-            const data = await response.json();
-            setFavoritos(Array.isArray(data) ? data : Object.values(data));
+        if (esInvitado || !usuario || !usuario.correo) return;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/favorites/user-email/${usuario.correo}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                setFavoritos(Array.isArray(data) ? data : Object.values(data));
+            }
+        } catch (error) {
+            console.error("Error de red cargando favoritos:", error);
         }
-    } catch (error) {
-        console.error("Error de red cargando favoritos:", error);
-    }
-};
+    };
     // Cargar los favoritos nada más abrir la aplicación
     useEffect(() => {
         cargarFavoritos();
@@ -102,8 +103,11 @@ function Dashboard({ usuario, onLogout }) {
                     {/* SECCIONES DINÁMICAS */}
                     {seccion === 'COMPARACIONES' && (
                         <div>
-                            <h2>📊 Módulo de Comparación de Jugadores</h2>
-                            <button onClick={() => setSeccion('INICIO')} className="btn-volver">← Volver al inicio</button>
+                            <h2>📊 Módulo de Comparación de Jugadores Analítico</h2>
+                            <ModuloComparacion
+                                usuario={usuario}
+                                onVolverAlInicio={() => setSeccion('INICIO')}
+                            />
                         </div>
                     )}
 
@@ -115,7 +119,7 @@ function Dashboard({ usuario, onLogout }) {
                                 usuario={usuario}
                                 onVolverAlInicio={() => setSeccion('INICIO')}
                                 onUpdateFavoritos={cargarFavoritos}
-                                favoritos = {favoritos}
+                                favoritos={favoritos}
                             />
                         </div>
                     )}
