@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './css/Dashboard.css';
 import BuscadorJugadores from './BuscadorJugadores';
 import BuscadorClubes from './BuscadorClubes';
+import ModuloComparacion from './ModuloComparacion';
 
 function Dashboard({ usuario, onLogout }) {
     const [seccion, setSeccion] = useState('INICIO');
@@ -130,6 +131,11 @@ function Dashboard({ usuario, onLogout }) {
                                     🏠
                                 </button>
                             </div>
+                            <h2>📊 Módulo de Comparación de Jugadores Analítico</h2>
+                            <ModuloComparacion
+                                usuario={usuario}
+                                onVolverAlInicio={() => setSeccion('INICIO')}
+                            />
                         </div>
                     )}
 
