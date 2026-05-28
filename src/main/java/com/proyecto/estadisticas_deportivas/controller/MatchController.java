@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -119,5 +120,17 @@ public class MatchController {
         }
 
         return ResponseEntity.ok(respuestaFront);
+    }
+
+    @GetMapping("/total-count")
+    public ResponseEntity<Integer> getTotalMatchesCount(@RequestParam String team) {
+        // Obtenemos la lista completa de encuentros registrados en la BD para este club
+        List<Match> todosLosPartidos = matchRepo.findByHomeTeamOrAwayTeam(team, team);
+        
+        // Devolvemos simplemente el tamaño de la lista (el total acumulado)
+        if (todosLosPartidos != null) {
+            return ResponseEntity.ok(todosLosPartidos.size());
+        }
+        return ResponseEntity.ok(0);
     }
 }

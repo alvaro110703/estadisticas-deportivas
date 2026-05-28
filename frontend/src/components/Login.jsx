@@ -48,8 +48,8 @@ function Login({ onBack, onLoginSuccess }) {
                     <div className="auth-input-group">
                         <label className="auth-label">Usuario o Correo Electrónico</label>
                         <input
-                            type="text" 
-                            name="identificador" 
+                            type="text"
+                            name="identificador"
                             value={credentials.identificador}
                             onChange={handleChange}
                             className="auth-input"
@@ -73,7 +73,11 @@ function Login({ onBack, onLoginSuccess }) {
                         {cargando ? 'Accediendo...' : 'Ingresar'}
                     </button>
                 </form>
-                <button onClick={onBack} className="auth-btn-back" disabled={cargando}>← Volver al Menú</button>
+               <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+                    <button onClick={onBack} className="btn-nav-icono" title="Volver al menú de inicio">
+                        🏠
+                    </button>
+                </div>
             </div>
         </div>
     );

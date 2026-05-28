@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../services/api';
-import './css/AuthForm.css'; 
+import './css/AuthForm.css';
 
 function Register({ onBack, onRegisterSuccess }) {
     const [formData, setFormData] = useState({ nombre: '', correo: '', contrasena: '' });
@@ -61,7 +61,11 @@ function Register({ onBack, onRegisterSuccess }) {
                         {cargando ? 'Registrando...' : 'Registrar Cuenta'}
                     </button>
                 </form>
-                <button onClick={onBack} className="auth-btn-back" disabled={cargando}>← Volver al Menú</button>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+                    <button onClick={onBack} className="btn-nav-icono" title="Volver al menú de inicio">
+                        🏠
+                    </button>
+                </div>
             </div>
         </div>
     );

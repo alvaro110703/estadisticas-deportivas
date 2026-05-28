@@ -10,34 +10,56 @@ function Dashboard({ usuario, onLogout }) {
     // 🌟 ESTADO PARA ALMACENAR LOS JUGADORES FAVORITOS 🌟
     const [favoritos, setFavoritos] = useState([]);
 
+    // 🌟 NUEVO ESTADO PARA TRANSFERIR EL JUGADOR CLICADO DESDE FAVORITOS AL BUSCADOR 🌟
+    const [jugadorFavSeleccionado, setJugadorFavSeleccionado] = useState(null);
+
     const esInvitado = usuario?.rol === 'GUEST';
 
     // 🌟 FUNCIÓN PARA COGER LOS FAVORITOS DESDE EL BACKEND 🌟
     const cargarFavoritos = async () => {
-    if (esInvitado || !usuario || !usuario.correo) return;
-    
-    try {
-        const response = await fetch(`http://localhost:8080/api/favorites/user-email/${usuario.correo}`);
-        
-        if (response.ok) {
-            const data = await response.json();
-            setFavoritos(Array.isArray(data) ? data : Object.values(data));
+        if (esInvitado || !usuario || !usuario.correo) return;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/favorites/user-email/${usuario.correo}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                setFavoritos(Array.isArray(data) ? data : Object.values(data));
+            }
+        } catch (error) {
+            console.error("Error de red cargando favoritos:", error);
         }
-    } catch (error) {
-        console.error("Error de red cargando favoritos:", error);
-    }
-};
+    };
+    
     // Cargar los favoritos nada más abrir la aplicación
     useEffect(() => {
         cargarFavoritos();
     }, [usuario]);
+
+    // 🌟 MANEJADOR PARA CLICAR JUGADORES DESDE CUALQUIERA DE LAS LISTAS DE FAVORITOS 🌟
+    const handleSeleccionarJugadorDirecto = (jugador) => {
+        // Mapeamos las propiedades respetando exactamente los campos del backend (totalGoals, totalAssists, position)
+        const jugadorFormateado = {
+            id: jugador.id,
+            name: jugador.name,
+            team: jugador.team,
+            position: jugador.position,
+            totalGoals: jugador.totalGoals !== undefined ? jugador.totalGoals : (jugador.golesTotales),
+            totalAssists: jugador.totalAssists !== undefined ? jugador.totalAssists : (jugador.asistenciasTotales),
+            partidosJugados: jugador.partidosJugados,
+            partidosTitular: jugador.partidosTitular,
+            ultimosPartidos: jugador.ultimosPartidos || []
+        };
+        setJugadorFavSeleccionado(jugadorFormateado);
+        setSeccion('BUSCADOR_JUG'); // Redirigimos inmediatamente al buscador de jugadores
+    };
 
     return (
         <div className="dashboard-container">
 
             {/* ================= BARRA SUPERIOR (HEADER) ================= */}
             <header className="header">
-                <div className="logo" onClick={() => setSeccion('INICIO')}>
+                <div className="logo" onClick={() => { setJugadorFavSeleccionado(null); setSeccion('INICIO'); }}>
                     ⚽ <span>ESTADÍSTICAS DEPORTIVAS</span>
                 </div>
 
@@ -85,7 +107,7 @@ function Dashboard({ usuario, onLogout }) {
                                 </div>
 
                                 {/* 2. BUSCADOR JUGADORES */}
-                                <div className="card-opcion" onClick={() => setSeccion('BUSCADOR_JUG')}>
+                                <div className="card-opcion" onClick={() => { setJugadorFavSeleccionado(null); setSeccion('BUSCADOR_JUG'); }}>
                                     <div className="icon-big">🏃‍♂️</div>
                                     <h3>BUSCADOR JUGADORES</h3>
                                 </div>
@@ -103,19 +125,24 @@ function Dashboard({ usuario, onLogout }) {
                     {seccion === 'COMPARACIONES' && (
                         <div>
                             <h2>📊 Módulo de Comparación de Jugadores</h2>
-                            <button onClick={() => setSeccion('INICIO')} className="btn-volver">← Volver al inicio</button>
+                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+                                <button onClick={() => setSeccion('INICIO')} className="btn-nav-icono" title="Volver al menú de inicio">
+                                    🏠
+                                </button>
+                            </div>
                         </div>
                     )}
 
                     {seccion === 'BUSCADOR_JUG' && (
                         <div>
                             <h2>🏃‍♂️ Buscador de Jugadores</h2>
-                            {/* 🌟 LE PASAMOS LA FUNCIÓN PARA QUE AL AÑADIR UN FAVORITO SE REFRESQUE LA BARRA 🌟 */}
+                            {/* 🌟 LE PASAMOS LA FUNCIÓN DE ACTUALIZACIÓN Y EL JUGADOR SELECCIONADO SI EXISTE 🌟 */}
                             <BuscadorJugadores
                                 usuario={usuario}
-                                onVolverAlInicio={() => setSeccion('INICIO')}
+                                onVolverAlInicio={() => { setJugadorFavSeleccionado(null); setSeccion('INICIO'); }}
                                 onUpdateFavoritos={cargarFavoritos}
-                                favoritos = {favoritos}
+                                favoritos={favoritos}
+                                jugadorInicial={jugadorFavSeleccionado}
                             />
                         </div>
                     )}
@@ -140,7 +167,11 @@ function Dashboard({ usuario, onLogout }) {
                                 </div>
                                 <button className="btn-upload">Añadir nueva foto de perfil</button>
                             </div>
-                            <button onClick={() => setSeccion('INICIO')} className="btn-volver">← Volver al inicio</button>
+                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+                                <button onClick={() => setSeccion('INICIO')} className="btn-nav-icono" title="Volver al menú de inicio">
+                                    🏠
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -149,12 +180,20 @@ function Dashboard({ usuario, onLogout }) {
                             <h2>⭐ Lista Completa de Favoritos</h2>
                             <div className="fav-list-complete" style={{ marginTop: '20px' }}>
                                 {favoritos.map((jugador, index) => (
-                                    <div key={jugador.id || index} style={{ padding: '10px', background: '#fff', marginBottom: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                    <div 
+                                        key={jugador.id || index} 
+                                        onClick={() => handleSeleccionarJugadorDirecto(jugador)}
+                                        style={{ padding: '10px', background: '#fff', marginBottom: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+                                    >
                                         <strong>{jugador.name}</strong> - {jugador.team} ({jugador.position})
                                     </div>
                                 ))}
                             </div>
-                            <button onClick={() => setSeccion('INICIO')} className="btn-volver">← Volver al inicio</button>
+                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+                                <button onClick={() => setSeccion('INICIO')} className="btn-nav-icono" title="Volver al menú de inicio">
+                                    🏠
+                                </button>
+                            </div>
                         </div>
                     )}
                 </main>
@@ -172,7 +211,13 @@ function Dashboard({ usuario, onLogout }) {
                         <div className="fav-list">
                             {/* 🌟 RECORREMOS E IMPRIMIMOS LOS PRIMEROS 5 FAVORITOS DINÁMICAMENTE 🌟 */}
                             {favoritos.slice(0, 5).map((jugador, index) => (
-                                <div key={jugador.id || index} className="fav-item" title={`${jugador.name} - ${jugador.team}`}>
+                                <div 
+                                    key={jugador.id || index} 
+                                    className="fav-item" 
+                                    title={`${jugador.name} - ${jugador.team}`}
+                                    onClick={() => handleSeleccionarJugadorDirecto(jugador)}
+                                    style={{ cursor: 'pointer' }}
+                                >
                                     <div className="avatar-circle" style={{ width: '30px', height: '30px', fontSize: '12px', minWidth: '30px' }}>
                                         {jugador.name?.charAt(0).toUpperCase()}
                                     </div>

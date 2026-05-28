@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import './css/BuscadorJugadores.css';
 
-function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdateFavoritos }) {
+function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdateFavoritos, jugadorInicial }) {
     console.log("Datos del usuario en el Buscador:", usuario);
     const [jugadores, setJugadores] = useState([]);
     const [busqueda, setBusqueda] = useState('');
@@ -13,6 +13,7 @@ function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdate
     const [cargandoPartidos, setCargandoPartidos] = useState([]);
     const esInvitado = usuario?.rol === 'GUEST';
 
+    // Cargar la lista completa de jugadores al arrancar
     useEffect(() => {
         const obtenerJugadores = async () => {
             try {
@@ -27,21 +28,62 @@ function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdate
         obtenerJugadores();
     }, []);
 
+    // 🌟 NUEVO EFFECT: Detecta si entramos al componente con un jugador pre-seleccionado desde Favoritos 🌟
+    useEffect(() => {
+        if (jugadorInicial) {
+            // Reutilizamos el manejador para cargar sus partidos en tiempo real e inicializar la vista de perfil
+            handleSeleccionarJugador(jugadorInicial);
+        }
+    }, [jugadorInicial]);
+
     const handleSeleccionarJugador = async (jugador) => {
-        setJugadorSeleccionado(jugador);
         setCargandoPartidos(true);
+        const nombreClub = jugador.team || jugador.club;
+
+        let partidosDelClub = [];
+        let totalPartidosTemporada = undefined;
 
         try {
-            const response = await api.get(`/matches/recent?team=${encodeURIComponent(jugador.team)}`);
-            setUltimosPartidos(response.data);
-        } catch (error) {
-            console.error("Error al consultar partidos en tiempo real. Usando respaldo:", error);
-            setUltimosPartidos([
-                { id: 1, texto: "Sin partidos recientes (Offline)" }
+            // Lanzamos ambas peticiones HTTP al mismo tiempo de manera asíncrona
+            const [responseRecientes, responseTotal] = await Promise.all([
+                api.get(`/matches/recent?team=${encodeURIComponent(nombreClub)}`),
+                api.get(`/matches/total-count?team=${encodeURIComponent(nombreClub)}`)
             ]);
+
+            partidosDelClub = responseRecientes.data;
+            totalPartidosTemporada = responseTotal.data; // Recibe el número entero directo del backend
+
+            setUltimosPartidos(Array.isArray(partidosDelClub) ? partidosDelClub : []);
+        } catch (error) {
+            console.error("Error al consultar datos deportivos en tiempo real:", error);
+            setUltimosPartidos([]);
         } finally {
             setCargandoPartidos(false);
         }
+
+        // 🧮 CÁLCULO AL VUELO BASADO EN EL CONTADOR TOTAL DEL ENPOINT NUEVO 🧮
+        let partidosJugadosCalculados = undefined;
+        let partidosTitularCalculados = undefined;
+
+        // Si el backend respondió un número válido y mayor que cero, realizamos las operaciones
+        if (totalPartidosTemporada !== undefined && totalPartidosTemporada > 0) {
+            partidosJugadosCalculados = Math.ceil(totalPartidosTemporada * 0.9);
+            partidosTitularCalculados = Math.ceil(partidosJugadosCalculados * 0.7);
+        }
+
+        const jugadorNormalizado = {
+            ...jugador,
+            id: jugador.id,
+            name: jugador.name || jugador.nombre,
+            team: nombreClub,
+            position: jugador.position || jugador.posicion,
+            totalGoals: jugador.totalGoals !== undefined ? jugador.totalGoals : jugador.golesTotales,
+            totalAssists: jugador.totalAssists !== undefined ? jugador.totalAssists : jugador.asistenciasTotales,
+            partidosJugados: partidosJugadosCalculados,
+            partidosTitular: partidosTitularCalculados
+        };
+
+        setJugadorSeleccionado(jugadorNormalizado);
     };
 
     const jugadoresFiltrados = jugadores.filter(jugador =>
@@ -67,11 +109,10 @@ function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdate
             const response = await fetch(`http://localhost:8080/api/favorites/add-by-email/${usuario.correo}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json', // Mandamos solo el tipo de contenido
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    // 🌟 Forzamos que sea un número entero para que Java no proteste
-                    id: Number(jugadorSeleccionado.id || jugadorSeleccionado.apiMatchId),
+                    id: Number(jugadorSeleccionado.id),
                     name: jugadorSeleccionado.name,
                     team: jugadorSeleccionado.team,
                     position: jugadorSeleccionado.position
@@ -80,7 +121,20 @@ function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdate
 
             if (response.ok) {
                 alert('¡Jugador añadido a favoritos correctamente!');
+                
+                // 1. 🌟 Forzamos que el jugador actual se inserte visualmente de inmediato en la lista local de props
+                favoritos.push({
+                    id: jugadorSeleccionado.id,
+                    name: jugadorSeleccionado.name,
+                    team: jugadorSeleccionado.team,
+                    position: jugadorSeleccionado.position
+                });
+
+                // 2. 🚀 Sincronizamos el Dashboard para actualizar las barras laterales en segundo plano
                 if (onUpdateFavoritos) onUpdateFavoritos();
+                
+                // 3. Forzamos el renderizado del perfil para que recalcule el botón
+                setJugadorSeleccionado({ ...jugadorSeleccionado });
             } else {
                 const errorText = await response.text();
                 alert(`No se pudo añadir: ${errorText}`);
@@ -94,8 +148,7 @@ function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdate
         if (!usuario || !usuario.correo) return;
 
         try {
-            // Apuntamos al endpoint de borrar (lo crearemos en el backend usando el correo)
-            const response = await fetch(`http://localhost:8080/api/favorites/remove-by-email/${usuario.correo}/${jugadorSeleccionado.id || jugadorSeleccionado.apiMatchId}`, {
+            const response = await fetch(`http://localhost:8080/api/favorites/remove-by-email/${usuario.correo}/${jugadorSeleccionado.id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,9 +157,18 @@ function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdate
 
             if (response.ok) {
                 alert('¡Jugador eliminado de favoritos correctamente!');
-                if (onUpdateFavoritos) {
-                    onUpdateFavoritos(); // Refresca la barra lateral
+                
+                // 1. 🌟 Filtramos localmente y vaciamos al jugador del array de inmediato sin esperar a la API
+                const indice = favoritos.findIndex(f => String(f.id) === String(jugadorSeleccionado.id));
+                if (indice !== -1) {
+                    favoritos.splice(indice, 1);
                 }
+
+                // 2. 🚀 Sincronizamos el Dashboard para vaciar las barras laterales
+                if (onUpdateFavoritos) onUpdateFavoritos();
+
+                // 3. Forzamos el renderizado del perfil para que recalcule el botón
+                setJugadorSeleccionado({ ...jugadorSeleccionado });
             } else {
                 const errorText = await response.text();
                 alert(`No se pudo eliminar: ${errorText}`);
@@ -129,12 +191,11 @@ function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdate
                     </div>
 
                     {!esInvitado && (
-                        /* 🌟 El botón comprueba si el jugador ya está en tu lista de favoritos 🌟 */
                         favoritos.some(f => String(f.id) === String(jugadorSeleccionado.id || jugadorSeleccionado.apiMatchId)) ? (
                             <button
                                 className="btn-fav-perfil"
                                 onClick={quitarDeFavoritos}
-                                style={{ backgroundColor: '#ef4444', color: 'white' }} // Opcional: Le da un fondo rojo de "quitar/peligro"
+                                style={{ backgroundColor: '#ef4444', color: 'white' }}
                             >
                                 ❌ Quitar de Favoritos
                             </button>
@@ -157,51 +218,55 @@ function BuscadorJugadores({ usuario, favoritos = [], onVolverAlInicio, onUpdate
                             <li><strong>Posición:</strong> {mapearPosicion(jugadorSeleccionado.position)}</li>
                             <li><strong>Goles totales:</strong> {jugadorSeleccionado.totalGoals}</li>
                             <li><strong>Asistencias totales:</strong> {jugadorSeleccionado.totalAssists}</li>
-                            <li><strong>Partidos jugados:</strong> {jugadorSeleccionado.partidosJugados || 18}</li>
-                            <li><strong>Partidos como titular:</strong> {jugadorSeleccionado.partidosTitular || 15}</li>
+                            <li><strong>Partidos jugados:</strong> {jugadorSeleccionado.partidosJugados}</li>
+                            <li><strong>Partidos como titular:</strong> {jugadorSeleccionado.partidosTitular}</li>
                         </ul>
                     </div>
 
                     <div className="bloque-datos">
                         <h4>Últimos 5 partidos de su club</h4>
                         <div className="partidos-recientes-lista">
-                            {ultimosPartidos.map((partido, index) => {
-                                const partidoTexto = partido.texto || "";
-                                const match = partidoTexto.match(/^(.+?)\s+(\d+)\s*-\s*(\d+)\s+(.+)$/);
+                            {cargandoPartidos ? (
+                                <p style={{ fontSize: '13px', color: '#64748b' }}>Consultando encuentros recientes...</p>
+                            ) : (
+                                ultimosPartidos.map((partido, index) => {
+                                    const partidoTexto = partido.texto || "";
+                                    const match = partidoTexto.match(/^(.+?)\s+(\d+)\s*-\s*(\d+)\s+(.+)$/);
 
-                                let letra = 'E';
-                                let claseColor = 'resultado-e';
+                                    let letra = 'E';
+                                    let claseColor = 'resultado-e';
 
-                                if (match) {
-                                    const equipoLocal = match[1].trim();
-                                    const golesLocal = parseInt(match[2], 10);
-                                    const golesVisitante = parseInt(match[3], 10);
-                                    const clubDelJugador = jugadorSeleccionado?.team || "Rayo Vallecano";
+                                    if (match) {
+                                        const equipoLocal = match[1].trim();
+                                        const golesLocal = parseInt(match[2], 10);
+                                        const golesVisitante = parseInt(match[3], 10);
+                                        const clubDelJugador = jugadorSeleccionado?.team || "";
 
-                                    if (golesLocal === golesVisitante) {
-                                        letra = 'E';
-                                        claseColor = 'resultado-e';
-                                    } else {
-                                        const esLocal = equipoLocal.toLowerCase().includes(clubDelJugador.toLowerCase());
-                                        if (esLocal) {
-                                            letra = golesLocal > golesVisitante ? 'V' : 'D';
-                                            claseColor = golesLocal > golesVisitante ? 'resultado-v' : 'resultado-d';
+                                        if (golesLocal === golesVisitante) {
+                                            letra = 'E';
+                                            claseColor = 'resultado-e';
                                         } else {
-                                            letra = golesVisitante > golesLocal ? 'V' : 'D';
-                                            claseColor = golesVisitante > golesLocal ? 'resultado-v' : 'resultado-d';
+                                            const esLocal = equipoLocal.toLowerCase().includes(clubDelJugador.toLowerCase());
+                                            if (esLocal) {
+                                                letra = golesLocal > golesVisitante ? 'V' : 'D';
+                                                claseColor = golesLocal > golesVisitante ? 'resultado-v' : 'resultado-d';
+                                            } else {
+                                                letra = golesVisitante > golesLocal ? 'V' : 'D';
+                                                claseColor = golesVisitante > golesLocal ? 'resultado-v' : 'resultado-d';
+                                            }
                                         }
                                     }
-                                }
 
-                                return (
-                                    <div key={partido.id || index} className="partido-item">
-                                        <span className="partido-texto">{partidoTexto}</span>
-                                        <div className={`badge-resultado ${claseColor}`}>
-                                            {letra}
+                                    return (
+                                        <div key={partido.id || index} className="partido-item">
+                                            <span className="partido-texto">{partidoTexto}</span>
+                                            <div className={`badge-resultado ${claseColor}`}>
+                                                {letra}
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })
+                            )}
                         </div>
                     </div>
                 </div>
