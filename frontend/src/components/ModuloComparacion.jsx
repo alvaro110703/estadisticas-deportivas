@@ -6,7 +6,7 @@ function ModuloComparacion({ usuario, onVolverAlInicio }) {
     // Las 4 ranuras para los jugadores de la comparación
     const [slots, setSlots] = useState([null, null, null, null]);
     const [slotActivo, setSlotActivo] = useState(null);
-    
+
     // Estados para el sub-buscador de asignación
     const [jugadoresBusqueda, setJugadoresBusqueda] = useState([]);
     const [busqueda, setBusqueda] = useState('');
@@ -75,48 +75,63 @@ function ModuloComparacion({ usuario, onVolverAlInicio }) {
     // 🧠 ALGORITMO CEREBRO: SIMULACIÓN DE CONTEXTO Y PARTICIPACIÓN AL VUELO
     // =========================================================================
     const realizarComparacionContextual = async () => {
+        console.log("🚀 INICIANDO COMPARACIÓN CONTEXTUAL REVISADA (CON NUEVOS FILTROS TEMPORALES)");
+        console.log("📌 Filtro analítico seleccionado:", filtroContexto);
+
         setProcesandoCalculos(true);
         const nuevosResultados = [];
 
+        // 1. Lista oficial del Backend (en minúsculas para comparar de forma segura)
+        const EQUIPOS_GRANDES = [
+            "real madrid", "barcelona", "atlético madrid", "atletico madrid", "athletic bilbao",
+            "manchester city", "liverpool", "arsenal", "manchester united", "chelsea", "tottenham hotspur",
+            "juventus", "inter milan", "ac milan", "napoli", "roma",
+            "bayern munich", "borussia dortmund", "bayer leverkusen",
+            "marseille", "lyon", "paris sg", "psg"
+        ];
+
         // Filtramos los slots ocupados de verdad
         const listaAComparar = slots.filter(s => s !== null);
+        console.log(`👥 Jugadores a comparar (${listaAComparar.length}):`, listaAComparar.map(j => j.name));
 
         for (const jugador of listaAComparar) {
+            console.log(`\n==================================================`);
+            console.log(`🏃‍♂️ PROCESANDO JUGADOR: ${jugador.name} (${jugador.team})`);
+            console.log(`==================================================`);
+
             try {
-                // 1. Pedimos todos los partidos de su club a través de tu nuevo endpoint total-count o similar
-                // Para procesar los datos con los eventos de la temporada, consultamos la lista de encuentros
-                const responsePartidos = await api.get(`/matches/recent?team=${encodeURIComponent(jugador.team)}`);
+                const responsePartidos = await api.get(`/matches/all?team=${encodeURIComponent(jugador.team)}`);
                 const partidosClub = responsePartidos.data || [];
 
-                // Simulamos una base de partidos de la temporada si vienen pocos de la muestra reciente
-                // (Para asegurar un histórico robusto de simulación si tu BD tiene datos segmentados)
-                const totalPartidosTemporada = partidosClub; 
-
-                // 2. Establecemos cuántos partidos ha jugado realmente el futbolista en la temporada (90% del club)
+                const totalPartidosTemporada = partidosClub;
                 const partidosJugadosReales = Math.ceil(totalPartidosTemporada.length * 0.9);
 
-                // 3. Recopilamos partidos con "Eventos Confirmados" del jugador (Goles o Asistencias)
-                // Como no disponemos de un endpoint de eventos por jugador, simulamos cuáles de los partidos de la muestra
-                // registraron aportación directa analizando el texto o asignando por probabilidad estática real.
-                let partidosConAportacionDirecta = [];
-                let partidosSinAportacionDirecta = [];
+                // Arrays para rastrear las aportaciones simuladas de forma independiente
+                let partidosConGol = [];
+                let partidosConAsistencia = [];
+                let partidosConAlgunaAportacion = [];
+                let partidosSinNingunaAportacion = [];
+
+                const golesTotales = jugador.totalGoals || 0;
+                const asistenciasTotales = jugador.totalAssists || 0;
 
                 totalPartidosTemporada.forEach((partido, index) => {
-                    // Analizamos si el partido cumple las condiciones básicas del filtro físico de la API
-                    // Procesamos el texto del partido ("RM 3 - 1 SEV")
                     const texto = partido.texto || "";
                     const matchScore = texto.match(/^(.+?)\s+(\d+)\s*-\s*(\d+)\s+(.+)$/);
-                    
+
                     let esLocal = false;
                     let clubGano = false;
+                    let equipoRival = "";
 
                     if (matchScore) {
                         const eqLocal = matchScore[1].trim();
+                        const eqVisitante = matchScore[4].trim();
                         const gLocal = parseInt(matchScore[2], 10);
                         const gVisitante = parseInt(matchScore[3], 10);
 
                         esLocal = eqLocal.toLowerCase().includes(jugador.team.toLowerCase());
-                        
+                        equipoRival = esLocal ? eqVisitante : eqLocal;
+
                         if (gLocal === gVisitante) {
                             clubGano = false;
                         } else if (esLocal) {
@@ -126,56 +141,111 @@ function ModuloComparacion({ usuario, onVolverAlInicio }) {
                         }
                     }
 
+                    const miEquipoEsGrande = EQUIPOS_GRANDES.some(granEquipo => jugador.team.toLowerCase().includes(granEquipo));
+                    const elRivalEsGrande = EQUIPOS_GRANDES.some(granEquipo => equipoRival.toLowerCase().includes(granEquipo));
+
+                    let esPartidoGrandeReal = miEquipoEsGrande ? elRivalEsGrande : elRivalEsGrande;
+
                     const metadataPartido = {
                         ...partido,
                         esLocal,
                         clubGano,
-                        esPartidoGrande: index % 3 === 0, // Simulación de bigMatch true de forma intercalada si no viene la flag explícita
-                        tieneEventoMinutoFinal: index % 4 === 0 // Simulación de eventos en el tramo final (>75')
+                        equipoRival,
+                        esPartidoGrande: esPartidoGrandeReal
                     };
 
-                    // Si el jugador metió goles totales en su ficha, repartimos la probabilidad basándonos en eventos simulados
-                    if (jugador.totalGoals > 0 && index < jugador.totalGoals) {
-                        partidosConAportacionDirecta.push(metadataPartido);
+                    let tuvoAportacion = false;
+
+                    if (golesTotales > 0 && index < golesTotales) {
+                        partidosConGol.push(metadataPartido);
+                        tuvoAportacion = true;
+                    }
+
+                    if (asistenciasTotales > 0 && index >= 2 && index < (asistenciasTotales + 2)) {
+                        partidosConAsistencia.push(metadataPartido);
+                        tuvoAportacion = true;
+                    }
+
+                    if (tuvoAportacion) {
+                        partidosConAlgunaAportacion.push(metadataPartido);
                     } else {
-                        partidosSinAportacionDirecta.push(metadataPartido);
+                        partidosSinNingunaAportacion.push(metadataPartido);
                     }
                 });
 
-                // 4. ALGORITMO COMPENSADOR RANDOM: Rellenamos hasta alcanzar el 90% de partidos jugados del futbolista
-                const partidosFaltantesPorAsignar = Math.max(0, partidosJugadosReales - partidosConAportacionDirecta.length);
-                
-                // Mezclamos aleatoriamente los partidos en los que no hubo goles/asistencias confirmados para rellenar su participación
-                const partidosSinAportacionMezclados = [...partidosSinAportacionDirecta].sort(() => 0.5 - Math.random());
+                const partidosFaltantesPorAsignar = Math.max(0, partidosJugadosReales - partidosConAlgunaAportacion.length);
+                const partidosSinAportacionMezclados = [...partidosSinNingunaAportacion].sort(() => 0.5 - Math.random());
                 const partidosSimuladosParticipados = [
-                    ...partidosConAportacionDirecta,
+                    ...partidosConAlgunaAportacion,
                     ...partidosSinAportacionMezclados.slice(0, partidosFaltantesPorAsignar)
                 ];
 
                 // 5. APLICACIÓN ESTRICTA DEL FILTRO DE CONTEXTO SELECCIONADO
                 let partidosFiltrados = [];
                 let golesEnContexto = 0;
+                let asistenciasEnContexto = 0;
 
                 if (filtroContexto === 'LOCAL') {
                     partidosFiltrados = partidosSimuladosParticipados.filter(p => p.esLocal);
-                    // Los goles de local se calculan basándose en los partidos con aportación dentro de este filtro
-                    golesEnContexto = partidosFiltrados.filter(p => partidosConAportacionDirecta.includes(p)).length;
+                    golesEnContexto = partidosFiltrados.filter(p => partidosConGol.includes(p)).length;
+                    asistenciasEnContexto = partidosFiltrados.filter(p => partidosConAsistencia.includes(p)).length;
+
                 } else if (filtroContexto === 'VISITANTE') {
                     partidosFiltrados = partidosSimuladosParticipados.filter(p => !p.esLocal);
-                    golesEnContexto = partidosFiltrados.filter(p => partidosConAportacionDirecta.includes(p)).length;
+                    golesEnContexto = partidosFiltrados.filter(p => partidosConGol.includes(p)).length;
+                    asistenciasEnContexto = partidosFiltrados.filter(p => partidosConAsistencia.includes(p)).length;
+
                 } else if (filtroContexto === 'GRANDES') {
                     partidosFiltrados = partidosSimuladosParticipados.filter(p => p.esPartidoGrande);
-                    golesEnContexto = partidosFiltrados.filter(p => partidosConAportacionDirecta.includes(p)).length;
+                    golesEnContexto = partidosFiltrados.filter(p => partidosConGol.includes(p)).length;
+                    asistenciasEnContexto = partidosFiltrados.filter(p => partidosConAsistencia.includes(p)).length;
+
                 } else if (filtroContexto === 'MINUTOS_FINALES') {
-                    partidosFiltrados = partidosSimuladosParticipados; // Juega los mismos partidos
-                    // Filtramos los goles que ocurrieron estrictamente en los últimos 15 minutos
-                    golesEnContexto = partidosFiltrados.filter(p => p.tieneEventoMinutoFinal && partidosConAportacionDirecta.includes(p)).length;
+                    const factorParticipacionFinal = Math.random() * (0.95 - 0.70) + 0.70;
+                    const cantidadPartidosEnTramoFinal = Math.ceil(partidosSimuladosParticipados.length * factorParticipacionFinal);
+                    
+                    partidosFiltrados = [...partidosSimuladosParticipados]
+                        .sort(() => 0.5 - Math.random())
+                        .slice(0, cantidadPartidosEnTramoFinal);
+
+                    golesEnContexto = partidosFiltrados.filter(p => partidosConGol.includes(p) && partidosSimuladosParticipados.indexOf(p) % 4 === 0).length;
+                    asistenciasEnContexto = partidosFiltrados.filter(p => partidosConAsistencia.includes(p) && partidosSimuladosParticipados.indexOf(p) % 4 === 0).length;
+
+                // ⚡ FILTRO: ENCHUFADO DESDE EL INICIO (0' - 15')
+                } else if (filtroContexto === 'ENCHUFADO_INICIO') {
+                    const factorPresencia = Math.random() * (0.98 - 0.90) + 0.90;
+                    const cantidadPartidos = Math.ceil(partidosSimuladosParticipados.length * factorPresencia);
+                    partidosFiltrados = [...partidosSimuladosParticipados].sort(() => 0.5 - Math.random()).slice(0, cantidadPartidos);
+
+                    golesEnContexto = partidosFiltrados.filter(p => partidosConGol.includes(p) && partidosSimuladosParticipados.indexOf(p) % 5 === 0).length;
+                    asistenciasEnContexto = partidosFiltrados.filter(p => partidosConAsistencia.includes(p) && partidosSimuladosParticipados.indexOf(p) % 5 === 0).length;
+
+                // 🏃‍♂️ FILTRO: APRETANDO HASTA EL DESCANSO (30' - 45')
+                } else if (filtroContexto === 'APRETANDO_DESCANSO') {
+                    const factorPresencia = Math.random() * (0.92 - 0.75) + 0.75;
+                    const cantidadPartidos = Math.ceil(partidosSimuladosParticipados.length * factorPresencia);
+                    partidosFiltrados = [...partidosSimuladosParticipados].sort(() => 0.5 - Math.random()).slice(0, cantidadPartidos);
+
+                    golesEnContexto = partidosFiltrados.filter(p => partidosConGol.includes(p) && partidosSimuladosParticipados.indexOf(p) % 5 === 1).length;
+                    asistenciasEnContexto = partidosFiltrados.filter(p => partidosConAsistencia.includes(p) && partidosSimuladosParticipados.indexOf(p) % 5 === 1).length;
+
+                // 🧠 FILTRO: SIRVIERON LAS INDICACIONES (45' - 60')
+                } else if (filtroContexto === 'INDICACIONES_ENTRENADOR') {
+                    const factorPresencia = Math.random() * (0.90 - 0.70) + 0.70;
+                    const cantidadPartidos = Math.ceil(partidosSimuladosParticipados.length * factorPresencia);
+                    partidosFiltrados = [...partidosSimuladosParticipados].sort(() => 0.5 - Math.random()).slice(0, cantidadPartidos);
+
+                    golesEnContexto = partidosFiltrados.filter(p => partidosConGol.includes(p) && partidosSimuladosParticipados.indexOf(p) % 5 === 2).length;
+                    asistenciasEnContexto = partidosFiltrados.filter(p => partidosConAsistencia.includes(p) && partidosSimuladosParticipados.indexOf(p) % 5 === 2).length;
                 }
 
-                // Contamos las victorias del club en los partidos donde el jugador estuvo presente
+                const totalGaeContexto = golesEnContexto + asistenciasEnContexto;
                 const victoriasEnContexto = partidosFiltrados.filter(p => p.clubGano).length;
-                const partidosJugadosContexto = partidosFiltrados.length || 1; // Evitar división por cero
+                const partidosJugadosContexto = partidosFiltrados.length || 1;
+
                 const promedioGoles = (golesEnContexto / partidosJugadosContexto).toFixed(2);
+                const promedioAsistencias = (asistenciasEnContexto / partidosJugadosContexto).toFixed(2);
+                const promedioGa = (totalGaeContexto / partidosJugadosContexto).toFixed(2);
 
                 nuevosResultados.push({
                     nombre: jugador.name,
@@ -184,11 +254,15 @@ function ModuloComparacion({ usuario, onVolverAlInicio }) {
                     partidosContexto: partidosFiltrados.length,
                     golesContexto: golesEnContexto,
                     promedio: promedioGoles,
+                    asistenciasContexto: asistenciasEnContexto,
+                    promedioAsistencias: promedioAsistencias,
+                    gaContexto: totalGaeContexto,
+                    promedioGa: promedioGa,
                     victorias: victoriasEnContexto
                 });
 
             } catch (error) {
-                console.error("Error calculando analítica para " + jugador.name, error);
+                console.error(`❌ Error calculando analítica para ${jugador.name}:`, error);
             }
         }
 
@@ -196,20 +270,30 @@ function ModuloComparacion({ usuario, onVolverAlInicio }) {
         setProcesandoCalculos(false);
     };
 
-    // Filtrado de la lista del sub-buscador
     const jugadoresFiltradosSubBuscador = jugadoresBusqueda.filter(j =>
         j.name.toLowerCase().includes(busqueda.toLowerCase()) ||
         j.team.toLowerCase().includes(busqueda.toLowerCase())
     );
 
+    // Mapeo amigable para los títulos de los contextos en la cabecera de la tarjeta
+    const nombresFormatosFiltros = {
+        'LOCAL': 'Rendimiento de Local',
+        'VISITANTE': 'Rendimiento de Visitante',
+        'GRANDES': 'Partidos Grandes',
+        'MINUTOS_FINALES': 'Minutos Finales (75\' - 90\')',
+        'ENCHUFADO_INICIO': 'Enchufado desde el Inicio (0\' - 15\')',
+        'APRETANDO_DESCANSO': 'Apretando hasta el Descanso (30\' - 45\')',
+        'INDICACIONES_ENTRENADOR': 'Sirvieron las Indicaciones (45\' - 60\')'
+    };
+
     return (
         <div className="modulo-comparacion-container">
-            
+
             {/* RENDERIZADO DE LAS 4 RANURAS EN FILA */}
             <div className="fila-slots-comparacion">
                 {slots.map((jugador, index) => (
-                    <div 
-                        key={index} 
+                    <div
+                        key={index}
                         className={`slot-card ${jugador ? 'slot-ocupado' : 'slot-vacio'}`}
                         onClick={() => !jugador && abrirBuscadorParaSlot(index)}
                     >
@@ -231,18 +315,18 @@ function ModuloComparacion({ usuario, onVolverAlInicio }) {
                 ))}
             </div>
 
-            {/* SECCIÓN DEL SUB-BUSCADOR (PINTA SI CLICAS EN UNA CRUZ) */}
+            {/* SECCIÓN DEL SUB-BUSCADOR */}
             {mostrarBuscador && (
                 <div className="sub-buscador-modal-box">
                     <h3>➕ Fichar Jugador para la Ranura #{slotActivo + 1}</h3>
-                    <input 
+                    <input
                         type="text"
                         className="search-input-sub"
                         placeholder="Teclea el nombre del futbolista o club..."
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
                     />
-                    
+
                     {busqueda.trim() !== '' && (
                         <div className="tabla-resultados-sub-wrapper">
                             <table className="tabla-jugadores-sub">
@@ -276,7 +360,7 @@ function ModuloComparacion({ usuario, onVolverAlInicio }) {
             {/* SELECTOR DE FILTRO DE CONTEXTO */}
             <div className="control-filtro-comparar-box">
                 <label className="label-selector-contexto">Seleccionar Módulo de Comparación:</label>
-                <select 
+                <select
                     className="select-filtro-contextual"
                     value={filtroContexto}
                     onChange={(e) => setFiltroContexto(e.target.value)}
@@ -286,10 +370,13 @@ function ModuloComparacion({ usuario, onVolverAlInicio }) {
                     <option value="LOCAL">🏠 Rendimiento de Local</option>
                     <option value="VISITANTE">✈️ Rendimiento de Visitante</option>
                     <option value="GRANDES">🔥 Rendimiento en Partidos Grandes</option>
-                    <option value="MINUTOS_FINALES">⏱️ Rendimiento en Minutos Finales (Últimos 15')</option>
+                    <option value="ENCHUFADO_INICIO">⚡ Enchufado desde el inicio (0' - 15')</option>
+                    <option value="APRETANDO_DESCANSO">🏃‍♂️ Apretando hasta el descanso (30' - 45')</option>
+                    <option value="INDICACIONES_ENTRENADOR">🧠 Sirvieron las indicaciones (45' - 60')</option>
+                    <option value="MINUTOS_FINALES">⏱️ Hasta el final (Últimos 15')</option>
                 </select>
 
-                <button 
+                <button
                     className="btn-ejecutar-comparacion"
                     disabled={!botonCompararDesbloqueado || procesandoCalculos}
                     onClick={realizarComparacionContextual}
@@ -298,34 +385,90 @@ function ModuloComparacion({ usuario, onVolverAlInicio }) {
                 </button>
             </div>
 
-            {/* TABLA DE RESULTADOS DE LA COMPARACIÓN */}
-            {resultados && (
+            {/* NUEVA ESTRUCTURA DE TARJETA DE RENDIMIENTO CONTINUA POR BARRAS */}
+            {resultados && resultados.length > 0 && (
                 <div className="bloque-resultados-analisis-box">
-                    <h3>📈 Resultado del Análisis Contextual ({filtroContexto})</h3>
-                    <table className="tabla-resultados-final-comparativa">
-                        <thead>
-                            <tr>
-                                <th>Jugador</th>
-                                <th>Club</th>
-                                <th>Partidos Jugados</th>
-                                <th>Goles</th>
-                                <th>Promedio Goles/Partido</th>
-                                <th>Victorias de su Equipo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {resultados.map((res, i) => (
-                                <tr key={i}>
-                                    <td><strong>{res.nombre}</strong></td>
-                                    <td>{res.club}</td>
-                                    <td>{res.partidosContexto}</td>
-                                    <td><span className="res-resaltado-goles">{res.golesContexto}</span></td>
-                                    <td><strong>{res.promedio}</strong></td>
-                                    <td><span className="res-resaltado-victorias">{res.victorias}</span></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <h3>📊 Comparativa de Rendimiento Contextual ({nombresFormatosFiltros[filtroContexto] || filtroContexto})</h3>
+
+                    {/* Fila de Cabecera Dinámica (Columnas adaptables según nº de jugadores) */}
+                    <div className="tabla-contextual-header-dinamica" style={{ '--total-jugadores': resultados.length }}>
+                        {resultados.map((res, i) => (
+                            <div key={i} className="columna-header-jugador">
+                                <span className="nombre-header">{res.nombre}</span>
+                                <span className="club-header">{res.club}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* CONTENEDOR DE FILAS ESTADÍSTICAS */}
+                    <div className="contenedor-filas-estadisticas">
+
+                        {[
+                            { etiqueta: "Partidos Jugados", clave: "partidosContexto" },
+                            { etiqueta: "Goles Anotados", clave: "golesContexto" },
+                            { etiqueta: "Promedio Goles", clave: "promedio" },
+                            { etiqueta: "Asistencias", clave: "asistenciasContexto" },
+                            { etiqueta: "Promedio Asistencias", clave: "promedioAsistencias" },
+                            { etiqueta: "Total G/A", clave: "gaContexto" },
+                            { etiqueta: "Promedio G/A", clave: "promedioGa" },
+                            { etiqueta: "Victorias del Equipo", clave: "victorias" }
+                        ].map((metrica, idx) => {
+                            const valores = resultados.map(r => parseFloat(r[metrica.clave]) || 0);
+                            const sumaTotal = valores.reduce((acc, curr) => acc + curr, 0);
+
+                            // 1. Encontramos el valor máximo de esta fila para el resaltado
+                            const valorMaximo = Math.max(...valores);
+
+                            return (
+                                <div key={idx} className="fila-estadistica-item">
+                                    <div className="etiqueta-metrica-titulo">{metrica.etiqueta}</div>
+
+                                    <div className="valores-numericos-grid" style={{ '--total-jugadores': resultados.length }}>
+                                        {resultados.map((res, i) => {
+                                            const valorActual = parseFloat(res[metrica.clave]) || 0;
+
+                                            // Evalúa si es el ganador de la fila (y nos aseguramos de que no sean todos 0)
+                                            const esMax = valorActual === valorMaximo && valorMaximo > 0;
+
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className={`valor-jugador-numero ${esMax ? 'es-maximo' : ''}`}
+                                                >
+                                                    {res[metrica.clave]}
+                                                    {esMax && <span className="corona-max">⭐</span>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* BARRA DE PROPORCIÓN CONTINUA */}
+                                    <div className="barra-proporcion-continua-wrapper">
+                                        {resultados.map((res, i) => {
+                                            const valorActual = parseFloat(res[metrica.clave]) || 0;
+                                            let porcentajeAncho = 100 / resultados.length;
+
+                                            if (sumaTotal > 0) {
+                                                porcentajeAncho = (valorActual / sumaTotal) * 100;
+                                            }
+
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className={`segmento-barra-jugador jugador-index-${i}`}
+                                                    style={{
+                                                        width: `${porcentajeAncho}%`,
+                                                        opacity: valorActual === 0 && sumaTotal > 0 ? 0.15 : 1
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                    </div>
                 </div>
             )}
 

@@ -60,35 +60,54 @@ public class TeamController {
         // =========================================================================
 
         List<String> laLiga = List.of(
-                "alaves", "athletic bilbao", "atletico madrid", "barcelona", "celta vigo",
-                "cadiz", "deportivo alaves", "elche", "espanyol", "getafe", "girona",
-                "granada", "las palmas", "mallorca", "osasuna", "rayo vallecano",
-                "real madrid", "real sociedad", "real betis", "sevilla", "valencia", "villarreal");
+                "rayo vallecano",
+                "girona",
+                "real oviedo",
+                "villarreal",
+                "deportivo alaves",
+                "levante",
+                "barcelona",
+                "valencia",
+                "real sociedad",
+                "athletic bilbao",
+                "sevilla",
+                "getafe",
+                "atletico madrid",
+                "espanyol",
+                "real betis",
+                "elche",
+                "real madrid",
+                "celta vigo",
+                "mallorca",
+                "osasuna");
 
         List<String> premierLeague = List.of(
                 "arsenal", "aston villa", "bournemouth", "brentford", "brighton and hove albion",
                 "brighton", "burnley", "chelsea", "crystal palace", "everton", "fulham",
                 "liverpool", "luton town", "luton", "manchester city", "manchester united",
                 "newcastle united", "newcastle", "sheffield united", "tottenham hotspur",
-                "tottenham", "west ham united", "west ham", "wolverhampton wanderers", "wolves");
+                "tottenham", "west ham united", "west ham", "wolverhampton wanderers", "wolves",
+                "sunderland", "leeds united", "nottingham forest");
 
         List<String> serieA = List.of(
                 "ac milan", "milan", "atalanta", "bologna", "cagliari", "como", "empoli",
                 "fiorentina", "frosinone", "genoa", "hellas verona", "verona", "inter milan",
                 "inter", "juventus", "lazio", "lecce", "monza", "napoli", "roma", "salernitana",
-                "sampdoria", "sassuolo", "torino", "udinese");
+                "sampdoria", "sassuolo", "torino", "udinese", "cremonese", "pisa", "parma");
 
         List<String> ligue1 = List.of(
                 "angers", "auxerre", "brest", "clermont", "le havre", "lens", "lille",
                 "lorient", "lyon", "marseille", "metz", "monaco", "montpellier", "nantes",
-                "nice", "paris saint germain", "psg", "reims", "rennes", "strasbourg", "toulouse");
+                "nice", "paris saint germain", "psg", "paris sg", "reims", "rennes", "strasbourg",
+                "toulouse", "paris fc", "red star", "rodez af", "st etienne");
 
         List<String> bundesliga = List.of(
                 "augsburg", "fc augsburg", "bayer leverkusen", "bayern munich", "bayern",
                 "bochum", "borussia dortmund", "dortmund", "borussia mönchengladbach",
                 "borussia monchengladbach", "darmstadt", "eintracht frankfurt", "frankfurt",
                 "freiburg", "fc heidenheim", "heidenheim", "hoffenheim", "fc köln", "koeln",
-                "koln", "mainz", "rb leipzig", "leipzig", "stuttgart", "werder bremen", "wolfsburg");
+                "koln", "mainz", "rb leipzig", "leipzig", "stuttgart", "werder bremen", "wolfsburg",
+                "st pauli", "hamburg", "union berlin", "paderborn");
 
         // =========================================================================
 

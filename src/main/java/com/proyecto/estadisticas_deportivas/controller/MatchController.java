@@ -126,11 +126,57 @@ public class MatchController {
     public ResponseEntity<Integer> getTotalMatchesCount(@RequestParam String team) {
         // Obtenemos la lista completa de encuentros registrados en la BD para este club
         List<Match> todosLosPartidos = matchRepo.findByHomeTeamOrAwayTeam(team, team);
-        
+
         // Devolvemos simplemente el tamaño de la lista (el total acumulado)
         if (todosLosPartidos != null) {
             return ResponseEntity.ok(todosLosPartidos.size());
         }
         return ResponseEntity.ok(0);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<java.util.Map<String, Object>>> getAllMatches(
+            @org.springframework.web.bind.annotation.RequestParam String team) {
+
+        // 1. Buscamos todos los partidos de ese club (local o visitante) usando tu
+        // repositorio
+        List<Match> todosLosPartidos = matchRepo.findByHomeTeamOrAwayTeam(team, team);
+
+        // 2. Los ordenamos por fecha de más reciente a más antiguo (igual que en
+        // recent)
+        todosLosPartidos.sort((m1, m2) -> m2.getDate().compareTo(m1.getDate()));
+
+        // 3. Mapeamos TODOS los partidos enviando tanto el texto simplificado como los
+        // campos estructurados
+        // Cambiamos el Map a Map<String, Object> para poder enviar enteros (IDs, goles)
+        // y booleanos
+        List<java.util.Map<String, Object>> respuestaFront = new java.util.ArrayList<>();
+
+        for (Match m : todosLosPartidos) {
+            java.util.Map<String, Object> datosPartido = new java.util.HashMap<>();
+
+            // Construimos el string clásico que ya usabas ("RM 3 - 1 SEV")
+            String textoPartido = m.getHomeTeam() + " " + m.getHomeScore() + " - " + m.getAwayScore() + " "
+                    + m.getAwayTeam();
+            datosPartido.put("texto", textoPartido);
+
+            // ¡CLAVE PARA EL COMPARADOR! Inyectamos las propiedades reales de la base de
+            // datos:
+            datosPartido.put("id", m.getId()); // ID del partido para mapearlo con match_events
+            datosPartido.put("homeTeam", m.getHomeTeam());
+            datosPartido.put("awayTeam", m.getAwayTeam());
+            datosPartido.put("homeGoals", m.getHomeScore()); // Usamos los nombres que espera el Front (homeGoals /
+                                                             // awayGoals)
+            datosPartido.put("awayGoals", m.getAwayScore());
+            datosPartido.put("bigGame",m.isBigMatch());
+
+            // Si tu entidad Match tiene el flag de partido importante, añádelo (si no lo
+            // tienes, puedes omitir esta línea)
+            // datosPartido.put("bigMatch", m.getBigMatch());
+
+            respuestaFront.add(datosPartido);
+        }
+
+        return ResponseEntity.ok(respuestaFront);
     }
 }

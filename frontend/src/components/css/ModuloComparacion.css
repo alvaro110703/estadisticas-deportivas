@@ -175,13 +175,15 @@
     color: #94a3b8;
 }
 
-/* Tabla Comparativa de Resultados Finales */
+/* Tabla Comparativa de Resultados Finales OPTIMIZADA */
 .bloque-resultados-analisis-box {
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 20px;
+    padding: 24px 16px; /* Más espacio interno arriba/abajo, menos a los lados */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    overflow-x: auto; /* Evita roturas drásticas si la pantalla se achica demasiado */
 }
 
 .tabla-resultados-final-comparativa {
@@ -190,19 +192,38 @@
     margin-top: 15px;
 }
 
-.tabla-resultados-final-comparativa th, .tabla-resultados-final-comparativa td {
-    padding: 12px;
+/* Optimizamos los paddings de las celdas para que quepan las 10 columnas perfectamente */
+.tabla-resultados-final-comparativa th, 
+.tabla-resultados-final-comparativa td {
+    padding: 12px 6px; /* Reducido el padding horizontal de 12px a 6px */
     border-bottom: 1px solid #e2e8f0;
     text-align: center;
+    font-size: 13px; /* Ligera reducción de fuente para balancear densidades */
 }
 
 .tabla-resultados-final-comparativa th {
     background: #f8fafc;
     color: #475569;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap; /* CRUCIAL: Evita saltos de línea feos en las cabeceras */
 }
 
+/* Estilos de resaltado unificados y limpios */
 .res-resaltado-goles {
     color: #2563eb;
+    font-weight: bold;
+}
+
+.res-resaltado-asistencias {
+    color: #4a90e2;
+    font-weight: bold;
+}
+
+.res-resaltado-ga {
+    color: #ea580c; /* Un tono naranja quemado un poco más elegante */
     font-weight: bold;
 }
 
@@ -210,3 +231,147 @@
     color: #16a34a;
     font-weight: bold;
 }
+
+/* Alineación específica para nombres de jugadores si quedan largos */
+.tabla-resultados-final-comparativa td:first-child {
+    text-align: left;
+    padding-left: 12px;
+    white-space: nowrap;
+}
+
+/* Tabla Comparativa de Resultados Finales - CORREGIDA PARA EVITAR DESBORDAMIENTOS */
+.bloque-resultados-analisis-box {
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #1e293b;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    
+    /* SOLUCIÓN AL CORTE: Forzamos control total del ancho disponible restando márgenes */
+    width: 100%;
+    box-sizing: border-box; 
+    max-width: calc(100% - 10px); /* Deja un colchón de seguridad a la derecha */
+    margin: 0 auto;
+}
+
+.bloque-resultados-analisis-box h3 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 18px;
+    color: #e2e8f0;
+}
+
+/* Cabecera elástica */
+.tabla-contextual-header-dinamica {
+    display: grid;
+    grid-template-columns: repeat(var(--total-jugadores, 2), 1fr);
+    gap: 15px;
+    border-bottom: 2px solid #1e293b;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.columna-header-jugador {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.columna-header-jugador .nombre-header {
+    font-weight: 700;
+    font-size: 15px;
+    color: #3b82f6;
+}
+
+.tabla-contextual-header-dinamica .columna-header-jugador:nth-child(2) .nombre-header { color: #10b981; }
+.tabla-contextual-header-dinamica .columna-header-jugador:nth-child(3) .nombre-header { color: #f5a623; }
+.tabla-contextual-header-dinamica .columna-header-jugador:nth-child(4) .nombre-header { color: #ec4899; }
+
+.columna-header-jugador .club-header {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+/* Filas Estadísticas */
+.contenedor-filas-estadisticas {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    box-sizing: border-box;
+}
+
+.fila-estadistica-item {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding-bottom: 8px;
+}
+
+.etiqueta-metrica-titulo {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.valores-numericos-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--total-jugadores, 2), 1fr);
+    gap: 15px;
+    text-align: center;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+/* Estilo base de números */
+.valor-jugador-numero {
+    font-size: 19px;
+    font-weight: 700;
+    color: #64748b; /* Los valores normales se apagan ligeramente en gris */
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+}
+
+/* EFECTO DE RESALTADO PARA EL MÁS ALTO */
+.valor-jugador-numero.es-maximo {
+    color: #ffffff;            /* Iluminamos el número en blanco puro */
+    font-size: 24px;           /* Crece ligeramente en tamaño */
+    font-weight: 900;          /* Más grueso */
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.4); /* Pequeño destello de luz */
+}
+
+.corona-max {
+    font-size: 14px;
+    filter: drop-shadow(0 0 4px rgba(245, 166, 35, 0.6));
+}
+
+/* LA BARRA CONTINUA COMPARTIDA */
+.barra-proporcion-continua-wrapper {
+    height: 12px;
+    width: 100%;
+    background: #1e293b;
+    border-radius: 6px;
+    display: flex;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.segmento-barra-jugador {
+    height: 100%;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.segmento-barra-jugador.jugador-index-0 { background: #2563eb !important; } 
+.segmento-barra-jugador.jugador-index-1 { background: #10b981 !important; } 
+.segmento-barra-jugador.jugador-index-2 { background: #f5a623 !important; } 
+.segmento-barra-jugador.jugador-index-3 { background: #ec4899 !important; }

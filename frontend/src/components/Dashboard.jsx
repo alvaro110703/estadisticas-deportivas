@@ -126,16 +126,15 @@ function Dashboard({ usuario, onLogout }) {
                     {seccion === 'COMPARACIONES' && (
                         <div>
                             <h2>📊 Módulo de Comparación de Jugadores</h2>
-                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
-                                <button onClick={() => setSeccion('INICIO')} className="btn-nav-icono" title="Volver al menú de inicio">
-                                    🏠
-                                </button>
-                            </div>
-                            <h2>📊 Módulo de Comparación de Jugadores Analítico</h2>
                             <ModuloComparacion
                                 usuario={usuario}
                                 onVolverAlInicio={() => setSeccion('INICIO')}
                             />
+                            {/* <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+                                <button onClick={() => setSeccion('INICIO')} className="btn-nav-icono" title="Volver al menú de inicio">
+                                    🏠
+                                </button>
+                            </div> */}
                         </div>
                     )}
 
